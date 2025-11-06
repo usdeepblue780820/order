@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>美容預約</title>
+    <!-- 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 載入 flatpickr (日期選擇器) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- flatpickr 繁體中文語系 -->
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/zh-tw.js"></script>
+
+    <style>
+        /* 基本樣式 */
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #f8f9fa; /* 淺灰色背景 */
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem; /* 圓角 */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem; /* 內距 */
+            margin-bottom: 1.5rem; /* 下方外距 */
+        }
+        .btn {
+            display: inline-block;
+            font-weight: 600;
+            padding: 0.65rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+            text-align: center;
+        }
+        .btn-primary {
+            background-color: #3b82f6; /* 藍色 */
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+        .btn-danger {
+            background-color: #ef4444; /* 紅色 */
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+        .btn-secondary {
+            background-color: #6b7280; /* 灰色 */
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+        
+        /* 表單樣式 */
+        .form-input, .form-select {
+            width: 100%;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db; /* 邊框 */
+            padding: 0.65rem 1rem;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+        }
+        /* [*** 新增 ***] Checkbox 樣式 */
+        .form-checkbox {
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 0.25rem;
+            border: 1px solid #d1d5db;
+            color: #3b82f6;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .form-checkbox:focus {
+             outline: none;
+             border-color: #3b82f6;
+             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        .form-checkbox:checked {
+            background-color: #3b82f6;
+        }
+
+
+        /* 禁用狀態 */
+        .form-select option:disabled {
+            background-color: #f3f4f6;
+            color: #9ca3af;
+        }
+        .form-input:disabled, .form-select:disabled, .btn:disabled, .form-checkbox:disabled {
+            background-color: #f3f4f6;
+            color: #9ca3af;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+
+        /* 列表樣式 */
+        .appointment-item, .profile-item, .dayoff-item {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1rem 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+        .appointment-item:last-child, .profile-item:last-child, .dayoff-item:last-child {
+            border-bottom: none;
+        }
+        
+        /* 服務統計 (共用) */
+        .service-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px; /* 膠囊狀 */
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem; /* [新增] 避免換行時黏在一起 */
+        }
+        
+        /* [修改] 移除 .timeslot-stats CSS 規則 */
+
+        /* 提示訊息 */
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            font-size: 1rem;
+            font-weight: 600;
+            z-index: 50;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .toast.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .toast-success {
+            background-color: #10b981; /* 綠色 */
+            color: white;
+        }
+        .toast-error {
+            background-color: #ef4444; /* 紅色 */
+            color: white;
+        }
+
+        /* 寵物預約區塊 <details> 樣式 */
+        .pet-accordion details {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+        }
+        .pet-accordion summary {
+            padding: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            background-color: #f9fafb;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
+        }
+        .pet-accordion summary:hover {
+            background-color: #f3f4f6;
+        }
+        .pet-accordion details[open] summary {
+            border-bottom: 1px solid #e5e7eb;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .pet-accordion .pet-form-content {
+            padding: 1.5rem;
+            background-color: white;
+            border-radius: 0 0 0.5rem 0.5rem;
+        }
+        
+        /* [*** 新增 ***] 禁用整個區塊的樣式 */
+        .disabled-card {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    
+    <!-- [*** 新增 ***] 全局載入遮罩 -->
+    <div id="global-loader" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+        <span class="text-white text-xl font-semibold">讀取分店資料中...</span>
+    </div>
+
+    <!-- [*** 新增 ***] 分店選擇 -->
+    <div class="max-w-md mx-auto mb-6 lg:max-w-none lg:mx-0">
+        <label for="store-select" class="form-label text-xl font-semibold">請選擇分店：</label>
+        <select id="store-select" class="form-select text-lg p-3">
+            <option value="">讀取分店列表中...</option>
+        </select>
+    </div>
+
+    <h1 class="text-3xl font-bold text-gray-800 mb-6 hidden">美容預約</h1>
+
+    <!-- 主容器 (左右排版) -->
+    <!-- [*** 修改 ***] 預設為禁用狀態 -->
+    <div id="main-container" class="grid grid-cols-1 lg:grid-cols-3 gap-6 disabled-card">
+
+        <!-- 左側欄位 (佔 2/3) -->
+        <div class="lg:col-span-2">
+
+            <!-- 卡片: 當日預約狀況 -->
+            <div class="card" id="appointment-status-card">
+                <!-- [*** 關鍵修改 ***] 加入標題和備註欄的 Flex 容器 -->
+                <div class="flex justify-between items-start gap-4 mb-4">
+                    <h2 class="text-xl font-semibold pt-2">當日預約狀況</h2>
+                    
+                    <!-- [*** 關鍵新增 ***] 當天備註文字框 (會自動儲存) -->
+                    <div class="w-full md:w-2/5 lg:w-3/5">
+                        <label for="daily-notes" class="form-label text-sm font-medium">當天備註 (自動儲存):</label>
+                        <textarea id="daily-notes" rows="3" class="form-input text-sm p-2" placeholder="選擇日期後載入..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- 服務統計 -->
+                <!-- [*** 關鍵修改 ***] 加入 stats-app -->
+                <div id="service-stats" class="mt-4 mb-2 hidden">
+                    <span id="stats-beauty" class="service-badge bg-blue-100 text-blue-700"></span>
+                    <span id="stats-bath" class="service-badge bg-green-100 text-green-700"></span>
+                    <span id="stats-single" class="service-badge bg-yellow-100 text-yellow-700"></span>
+                    <span id="stats-app" class="service-badge bg-cyan-100 text-cyan-700"></span>
+                </div>
+                
+                <!-- [修改] 時段隻數統計 (改用 Tailwind) -->
+                <div id="timeslot-stats" class="hidden flex flex-wrap pt-2 border-t border-gray-100 mt-2">
+                    <!-- 時段統計將動態插入此處 -->
+                </div>
+
+                <!-- 預約列表容器 -->
+                <div class="mt-4">
+                    <div id="appointment-list-loader" class="text-gray-500 hidden">讀取中...</div>
+                    <div id="appointment-list-message" class="text-gray-500">請先從「新增預約」區塊選擇日期</div>
+                    <div id="appointment-list">
+                        <!-- 預約項目將動態插入此處 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片: 新增預約 (包含日期選擇) -->
+            <div class="card">
+                <h2 class="text-xl font-semibold mb-4">新增預約</h2>
+                
+                <form id="appointment-form" class="space-y-6">
+                    
+                    <!-- 共用欄位 -->
+                    <!-- [*** 關鍵修改 ***] 改為 4 欄，加入 APP預約 -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label for="appointment-date" class="form-label">請選擇日期：</label>
+                            <input type="text" id="appointment-date" class="form-input" placeholder="點擊選擇日期...">
+                            <!-- 日期 (隱藏，由上方日曆連動) -->
+                            <input type="hidden" id="date" name="date">
+                        </div>
+                        <div>
+                            <label for="time-select" class="form-label">時間</label>
+                            <select id="time-select" name="time" class="form-select">
+                                <option value="">請先選擇分店</option>
+                                <!-- 時間選項將由 JS 自動生成 -->
+                            </select>
+                        </div>
+                        <div>
+                            <label for="phone" class="form-label">連絡電話</label>
+                            <input type="tel" id="phone" name="phone" class="form-input" placeholder="例如: 0912345678">
+                        </div>
+                        <!-- [*** 關鍵新增 ***] APP 預約勾選框 -->
+                        <div class="flex items-center pt-7">
+                            <input type="checkbox" id="is-app-booking" name="isApp" class="form-checkbox mr-2">
+                            <label for="is-app-booking" class="form-label mb-0">APP預約</label>
+                        </div>
+                    </div>
+
+                    <!-- 寵物 1-4 區塊 -->
+                    <div class="pet-accordion space-y-4">
+                        
+                        <!-- 寵物 1 (預設開啟) -->
+                        <details class="border rounded-lg" open>
+                            <summary class="p-4 font-semibold cursor-pointer">寵物 1 (必填)</summary>
+                            <div class="pet-form-content p-4 border-t grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="species-1" class="form-label">種類 (寵物1)</label>
+                                    <select id="species-1" name="species-1" class="form-select">
+                                        <option value="">請選擇</option>
+                                        <option value="兔子">兔子</option>
+                                        <option value="狗">狗</option>
+                                        <option value="貓">貓</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="service-1" class="form-label">服務內容 (寵物1)</label>
+                                    <select id="service-1" name="service-1" class="form-select">
+                                        <option value="">請選擇</option>
+                                        <option value="美容">美容</option>
+                                        <option value="洗澡">洗澡</option>
+                                        <option value="單項">單項</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="breed-1" class="form-label">品種 (寵物1)</label>
+                                    <input type="text" id="breed-1" name="breed-1" class="form-input" placeholder="例如: 貴賓" onchange="findAndDisplayPetNotes(1)">
+                                </div>
+                                <div>
+                                    <label for="pet-name-1" class="form-label">寵物名 (寵物1)</label>
+                                    <input type="text" id="pet-name-1" name="petName-1" class="form-input" placeholder="例如: 寶寶" onchange="findAndDisplayPetNotes(1)">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label for="notes-1" class="form-label">備註 (寵物1)</label>
+                                    <textarea id="notes-1" name="notes-1" rows="2" class="form-input" placeholder="客人指定的特殊需求..."></textarea>
+                                </div>
+                                <div id="pet-notes-display-1" class="md:col-span-2 p-3 bg-yellow-100 text-yellow-800 border border-yellow-300 rounded-lg hidden">
+                                    <strong>自動帶出注意事項:</strong>
+                                    <p id="pet-notes-content-1"></p>
+                                </div>
+                            </div>
+                        </details>
+
+                        <!-- 寵物 2 (選填) -->
+                        <details class="border rounded-lg">
+                            <summary class="p-4 font-semibold cursor-pointer">寵物 2 (選填)</summary>
+                            <div class="pet-form-content p-4 border-t grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="species-2" class="form-label">種類 (寵物2)</label>
+                                    <select id="species-2" name="species-2" class="form-select">
+                                        <option value="">請選擇</option>
+                                        <option value="兔子">兔子</option>
+                                        <option value="狗">狗</option>
+                                        <option value="貓">貓</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="service-2" class="form-label">服務內容 (寵物2)</label>
+                                    <select id="service-2" name="service-2" class="form-select">
+                                        <option value="">請選擇</option>
+                                        <option value="美容">美容</option>
+                                        <option value="洗澡">洗澡</option>
+                                        <option value="單項">單項</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="breed-2" class="form-label">品種 (寵物2)</label>
+                                    <input type="text" id="breed-2" name="breed-2" class="form-input" placeholder="例如: 貴賓" onchange="findAndDisplayPetNotes(2)">
+                                </div>
+                                <div>
+                                    <label for="pet-name-2" class="form-label">寵物名 (寵物2)</label>
+                                    <input type="text" id="pet-name-2" name="petName-2" class="form-input" placeholder="例如: 寶寶" onchange="findAndDisplayPetNotes(2)">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label for="notes-2" class="form-label">備註 (寵物2)</label>
+                                    <textarea id="notes-2" name="notes-2" rows="2" class="form-input" placeholder="客人指定的特殊需求..."></textarea>
+                                </div>
+                                <div id="pet-notes-display-2" class="md:col-span-2 p-3 bg-yellow-100 text-yellow-800 border border-yellow-300 rounded-lg hidden">
+                                    <strong>自動帶出注意事項:</strong>
+                                    <p id="pet-notes-content-2"></p>
+                                </div>
+                            </div>
+                        </details>
+
+                        <!-- 寵物 3 (選填) -->
+                        <details class="border rounded-lg">
+                            <summary class="p-4 font-semibold cursor-pointer">寵物 3 (選填)</summary>
+                            <div class="pet-form-content p-4 border-t grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="species-3" class="form-label">種類 (寵物3)</label>
+                                    <select id="species-3" name="species-3" class="form-select">
+                                        <option value="">請選擇</option>
+                                        <option value="兔子">兔子</option>
+                                        <option value="狗">狗</option>
+                                        <option value="貓">貓</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="service-3" class="form-label">服務內容 (寵物3)</label>
+                                    <select id="service-3" name="service-3" class="form-select">
+                                        <option value="">請選擇</option>
+                                        <option value="美容">美容</option>
+                                        <option value="洗澡">洗澡</option>
+                                        <option value="單項">單項</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="breed-3" class="form-label">品種 (寵物3)</label>
+                                    <input type="text" id="breed-3" name="breed-3" class="form-input" placeholder="例如: 貴賓" onchange="findAndDisplayPetNotes(3)">
+                                </div>
+                                <div>
+                                    <label for="pet-name-3" class="form-label">寵物名 (寵物3)</label>
+                                    <input type="text" id="pet-name-3" name="petName-3" class="form-input" placeholder="例如: 寶寶" onchange="findAndDisplayPetNotes(3)">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label for="notes-3" class="form-label">備註 (寵物3)</label>
+                                    <textarea id="notes-3" name="notes-3" rows="2" class="form-input" placeholder="客人指定的特殊需求..."></textarea>
+                                </div>
+                                <div id="pet-notes-display-3" class="md:col-span-2 p-3 bg-yellow-100 text-yellow-800 border border-yellow-300 rounded-lg hidden">
+                                    <strong>自動帶出注意事項:</strong>
+                                    <p id="pet-notes-content-3"></p>
+                                </div>
+                            </div>
+                        </details>
+
+                        <!-- 寵物 4 (選填) -->
+                        <details class="border rounded-lg">
+                            <summary class="p-4 font-semibold cursor-pointer">寵物 4 (選填)</summary>
+                            <div class="pet-form-content p-4 border-t grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="species-4" class="form-label">種類 (寵物4)</label>
+                                    <select id="species-4" name="species-4" class="form-select">
+                                        <option value="">請選擇</option>
+                                        <option value="兔子">兔子</option>
+                                        <option value="狗">狗</option>
+                                        <option value="貓">貓</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="service-4" class="form-label">服務內容 (寵物4)</label>
+                                    <select id="service-4" name="service-4" class="form-select">
+                                        <option value="">請選擇</option>
+                                        <option value="美容">美容</option>
+                                        <option value="洗澡">洗澡</option>
+                                        <option value="單項">單項</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="breed-4" class="form-label">品種 (寵物4)</label>
+                                    <input type="text" id="breed-4" name="breed-4" class="form-input" placeholder="例如: 貴賓" onchange="findAndDisplayPetNotes(4)">
+                                </div>
+                                <div>
+                                    <label for="pet-name-4" class="form-label">寵物名 (寵物4)</label>
+                                    <input type="text" id="pet-name-4" name="petName-4" class="form-input" placeholder="例如: 寶寶" onchange="findAndDisplayPetNotes(4)">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label for="notes-4" class="form-label">備註 (寵物4)</label>
+                                    <textarea id="notes-4" name="notes-4" rows="2" class="form-input" placeholder="客人指定的特殊需求..."></textarea>
+                                </div>
+                                <div id="pet-notes-display-4" class="md:col-span-2 p-3 bg-yellow-100 text-yellow-800 border border-yellow-300 rounded-lg hidden">
+                                    <strong>自動帶出注意事項:</strong>
+                                    <p id="pet-notes-content-4"></p>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+
+
+                    <!-- 送出按鈕 -->
+                    <div>
+                        <button type="submit" id="submit-appointment" class="btn btn-primary w-full" disabled>
+                            送出預約 (請先選擇日期)
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+        </div>
+
+        <!-- 右側欄位 (佔 1/3) -->
+        <div class="lg:col-span-1">
+            
+            <!-- 卡片: 需特別注意事項 -->
+            <div class="card" id="pet-profile-card">
+                <h2 class="text-xl font-semibold mb-4">需特別注意事項</h2>
+
+                <!-- 已儲存列表 -->
+                <h3 class="text-lg font-semibold mb-3">已儲存事項</h3>
+                <div id="pet-profile-list-loader" class="text-gray-500">讀取中...</div>
+                <div id="pet-profile-list-message" class="text-gray-500 hidden">尚未儲存任何注意事項。</div>
+                <div id="pet-profile-list" class="max-h-80 overflow-y-auto mb-6"> <!-- 增加下方外距 -->
+                    <!-- 注意事項將動態插入此處 -->
+                </div>
+                
+                <!-- 新增/編輯表單 -->
+                <h3 class="text-lg font-semibold mb-3">新增/編輯注意事項</h3> <!-- 新增標題 -->
+                <form id="pet-profile-form" class="space-y-4">
+                    <input type="hidden" id="profile-id" name="id">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="profile-breed" class="form-label">品種</label>
+                            <input type="text" id="profile-breed" name="breed" class="form-input" placeholder="例如: 貴賓" >
+                        </div>
+                        <div>
+                            <label for="profile-name" class="form-label">寵物名</label>
+                            <input type="text" id="profile-name" name="name" class="form-input" placeholder="例如: 寶寶" >
+                        </div>
+                    </div>
+                    <div>
+                        <label for="profile-notes" class="form-label">注意事項</label>
+                        <textarea id="profile-notes" name="notes" rows="5" class="form-input" placeholder="例如: 很會叫、怕吹風機..."></textarea>
+                    </div>
+                    <div class="flex gap-4">
+                        <button type="submit" id="profile-submit-btn" class="btn btn-primary flex-1">儲存新注意事項</button>
+                        <button type="button" id="profile-cancel-btn" class="btn btn-secondary flex-1 hidden">取消編輯</button>
+                    </div>
+                </form>
+
+            </div>
+            
+            <!-- 卡片: 已排定公休 -->
+            <div class="card">
+                <h2 class="text-xl font-semibold mb-4">已排定公休</h2>
+                <div id="day-off-list-loader" class="text-gray-500">讀取中...</div>
+                <div id="day-off-list-message" class="text-gray-500 hidden">尚未設定公休。</div>
+                <div id="day-off-list" class="max-h-60 overflow-y-auto">
+                    <!-- 公休列表將動態插入此處 -->
+                </div>
+            </div>
+
+            <!-- 卡片: 設定公休 -->
+            <div class="card">
+                <h2 class="text-xl font-semibold mb-4">設定公休</h2>
+                <form id="day-off-form">
+                    <div>
+                        <label for="day-off-picker" class="form-label">選擇公休日期 (可多選)</label>
+                        <input type="text" id="day-off-picker" class="form-input" placeholder="點擊選擇日期...">
+                    </div>
+                    <button type="submit" id="day-off-submit-btn" class="btn btn-primary w-full mt-4">設定公休</button>
+                </form>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- 提示訊息 Toast -->
+    <div id="toast" class="toast">
+        <span id="toast-message"></span>
+    </div>
+
+    <script>
+        // --- 全局設定 ---
+        var WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxZ8Z16SBwAxn0AeycM6VxRLrOyO8Hy9vJ2U4PQkEq8n8GNFZFViYneIT8yQTo5hitX7A/exec'; // [*** 請務必替換成您新部署的網址 ***]
+        
+        var allPetProfiles = []; // 儲存所有寵物注意事項
+        var currentDaysOff = []; // 儲存所有公休日
+        var appointmentDatePicker; // 預約日曆實例
+        var dayOffDatePicker; // 公休R歷實例
+        var allStores = []; // [*** 新增 ***] 儲存所有分店資料
+        var currentStoreId = null; // [*** 新增 ***] 當前選擇的分店 ID
+
+        // --- DOM 元素 ---
+        var globalLoader = document.getElementById('global-loader');
+        var mainContainer = document.getElementById('main-container');
+        var storeSelect = document.getElementById('store-select');
+
+        var appointmentDateInput = document.getElementById('appointment-date');
+        var appointmentList = document.getElementById('appointment-list');
+        var appointmentListLoader = document.getElementById('appointment-list-loader');
+        var appointmentListMessage = document.getElementById('appointment-list-message');
+        var timeSelect = document.getElementById('time-select');
+        var appointmentForm = document.getElementById('appointment-form');
+        var submitAppointmentBtn = document.getElementById('submit-appointment');
+        
+        var dayOffList = document.getElementById('day-off-list');
+        var dayOffListLoader = document.getElementById('day-off-list-loader');
+        var dayOffListMessage = document.getElementById('day-off-list-message');
+        var dayOffSubmitBtn = document.getElementById('day-off-submit-btn'); // [*** 新增 ***]
+        
+        var petProfileList = document.getElementById('pet-profile-list');
+        var petProfileListLoader = document.getElementById('pet-profile-list-loader');
+        var petProfileListMessage = document.getElementById('pet-profile-list-message');
+        var petProfileForm = document.getElementById('pet-profile-form');
+        var profileIdInput = document.getElementById('profile-id');
+        var profileBreedInput = document.getElementById('profile-breed');
+        var profileNameInput = document.getElementById('profile-name');
+        var profileNotesInput = document.getElementById('profile-notes');
+        var profileSubmitBtn = document.getElementById('profile-submit-btn');
+        var profileCancelBtn = document.getElementById('profile-cancel-btn');
+        
+        var serviceStatsContainer = document.getElementById('service-stats');
+        var statsBeauty = document.getElementById('stats-beauty');
+        var statsBath = document.getElementById('stats-bath');
+        var statsSingle = document.getElementById('stats-single');
+        var statsApp = document.getElementById('stats-app'); // [*** 新增 ***]
+        
+        var timeslotStatsContainer = document.getElementById('timeslot-stats');
+        
+        var dailyNotesInput = document.getElementById('daily-notes'); // [*** 新增 ***]
+
+
+        // --- 頁面初始化 ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. [*** 修改 ***] 初始化日期選擇器 (先初始化，但保持禁用)
+            initializeDatePickers();
+            
+            // 2. [*** 修改 ***] 載入分店資料 (最優先)
+            fetchStoreData(); 
+
+            // 3. 綁定事件
+            storeSelect.addEventListener('change', handleStoreChange);
+            appointmentForm.addEventListener('submit', handleAddAppointment);
+            document.getElementById('day-off-form').addEventListener('submit', handleSetDayOff);
+            petProfileForm.addEventListener('submit', handleSavePetProfile);
+            profileCancelBtn.addEventListener('click', resetProfileForm);
+            
+            // 4. [*** 新增 ***] 綁定當天備註自動儲存事件
+            dailyNotesInput.addEventListener('change', handleSaveDailyNote);
+        });
+        
+        // --- [*** 新增 ***] 分店資料處理 ---
+        
+        /**
+         * [新增] 載入分店資料
+         */
+        async function fetchStoreData() {
+            try {
+                // 注意：getStoreData 不需要 storeId
+                const data = await apiCall('GET', 'getStoreData', null, false); 
+                
+                if (data && data.length > 0) {
+                    allStores = data;
+                    storeSelect.innerHTML = '<option value="">請選擇分店</option>'; // 清空 "載入中"
+                    data.forEach(store => {
+                        const option = document.createElement('option');
+                        option.value = store.id;
+                        option.textContent = store.name;
+                        storeSelect.appendChild(option);
+                    });
+                    
+                    // [*** 自動選擇 S5100 (湖口中山店) ***]
+                    const defaultStoreId = 'S5100';
+                    if (allStores.find(s => s.id === defaultStoreId)) {
+                        storeSelect.value = defaultStoreId;
+                        handleStoreChange(); // 手動觸發一次變更事件
+                    }
+                    
+                } else {
+                    storeSelect.innerHTML = '<option value="">讀取分店失敗</option>';
+                    globalLoader.textContent = '讀取分店資料失敗，請檢查工作表。'; // 顯示錯誤
+                    return; // 中斷執行
+                }
+            } catch (error) {
+                storeSelect.innerHTML = '<option value="">讀取分店失敗</option>';
+                // [*** 修正 ***] 將錯誤顯示在 Loader 上
+                globalLoader.querySelector('span').textContent = `讀取分店失敗: ${error.message}`;
+                return; // 中斷執行
+            }
+            
+            // 隱藏全局載入
+            globalLoader.style.display = 'none';
+        }
+        
+        /**
+         * [新增] 處理分店切換
+         */
+        function handleStoreChange() {
+            currentStoreId = storeSelect.value;
+            
+            if (!currentStoreId) {
+                mainContainer.classList.add('disabled-card'); // 禁用主畫面
+                return;
+            }
+            
+            mainContainer.classList.remove('disabled-card'); // 啟用主畫面
+            
+            // 1. 重置日期選擇
+            if (appointmentDatePicker) appointmentDatePicker.clear();
+            if (dayOffDatePicker) dayOffDatePicker.clear();
+            
+            // 2. 清空畫面
+            clearAppointmentList();
+            dayOffList.innerHTML = '';
+            dayOffListLoader.style.display = 'block';
+            dayOffListMessage.style.display = 'none';
+            petProfileList.innerHTML = '';
+            petProfileListLoader.style.display = 'block';
+            petProfileListMessage.style.display = 'none';
+            dailyNotesInput.value = ''; // [*** 新增 ***] 清空備註
+
+            // 3. 載入該分店的營業時間
+            generateTimeSlots();
+            
+            // 4. 載入該分店的資料
+            fetchDaysOff(); // 載入公休 (會觸發更新日曆)
+            fetchPetProfiles(); // 載入注意事項
+        }
+
+
+        // --- 輔助函式 ---
+        
+        /**
+         * [*** 修改 ***] 根據分店資料產生時間選單
+         */
+        function generateTimeSlots() {
+            // [*** 修改 ***] 先清空 (保留 "請選擇時間")
+            timeSelect.innerHTML = '<option value="">請選擇時間</option>';
+            
+            if (!currentStoreId) {
+                 timeSelect.innerHTML = '<option value="">請先選擇分店</option>';
+                 return;
+            }
+            
+            const store = allStores.find(s => s.id === currentStoreId);
+            if (!store || !store.startTime || !store.endTime || !store.timeUnit) {
+                 timeSelect.innerHTML = '<option value="">分店時間設定錯誤</option>';
+                 return;
+            }
+
+            try {
+                const [startH, startM] = store.startTime.split(':').map(Number);
+                const [endH, endM] = store.endTime.split(':').map(Number);
+                const unit = parseInt(store.timeUnit); // 30 or 60
+
+                let currentHour = startH;
+                let currentMinute = startM;
+                
+                // [*** 修正 ***] 結束時間判斷 ( <= )
+                while (currentHour < endH || (currentHour === endH && currentMinute <= endM)) {
+                    const timeString = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
+                    const option = document.createElement('option');
+                    option.value = timeString;
+                    option.textContent = timeString;
+                    timeSelect.appendChild(option);
+                    
+                    // 計算下一個時段
+                    currentMinute += unit;
+                    if (currentMinute >= 60) {
+                        currentHour += Math.floor(currentMinute / 60);
+                        currentMinute = currentMinute % 60;
+                    }
+                }
+            } catch (e) {
+                 timeSelect.innerHTML = '<option value="">時間格式解析錯誤</option>';
+                 console.error("Generate time slots error:", e);
+            }
+        }
+        
+        /**
+         * 輔助函式：標準化日期 (確保是 YYYY-MM-DD)
+         */
+        function formatSheetDate(dateObject) {
+            if (!dateObject) return null;
+            
+            // 如果它已經是 "YYYY-MM-DD" 格式的文字
+            if (typeof dateObject === 'string' && dateObject.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                return dateObject;
+            }
+            
+            try {
+                // 處理 ISO 格式 (T...Z) 或其他日期物件
+                const date = new Date(dateObject);
+                
+                // [*** 修正 ***] 應該使用本地時區，因為 flatpickr 傳來的是本地日期
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                
+                return `${year}-${month}-${day}`;
+            } catch (e) {
+                return null; 
+            }
+        }
+
+        /**
+         * 輔助函式：格式化日期 (YYYY/MM/DD)
+         */
+        function formatHumanDate(dateString) {
+            try {
+                // [修正] 確保傳入的是 YYYY-MM-DD
+                const cleanDateString = formatSheetDate(dateString);
+                
+                // [NaN 修正] 如果格式化失敗，就返回空值
+                if (!cleanDateString) return null;
+
+                const parts = cleanDateString.split('-');
+                const year = parseInt(parts[0]);
+                const month = parseInt(parts[1]); 
+                const day = parseInt(parts[2]);
+                
+                return `${year}/${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}`;
+
+            } catch (e) {
+                return null; // 格式化失敗則回傳空值
+            }
+        }
+        
+        /**
+         * 輔助函式：格式化時間 (HH:mm)
+         */
+        function formatHumanTime(timeValue) {
+            if (!timeValue) return '未填';
+            if (typeof timeValue === 'string') {
+                // '10:30' or '10:30:00'
+                if (timeValue.includes('T')) {
+                     // 處理 '1899-12-30T...Z' 格式 (來自 Google Sheet)
+                    try {
+                        const date = new Date(timeValue);
+                        if (!isNaN(date)) {
+                            // [*** 修正 ***] 讀取本地時區 (GS 傳回來的 Date 物件是本地時區)
+                            const hours = String(date.getHours()).padStart(2, '0');
+                            const minutes = String(date.getMinutes()).padStart(2, '0');
+                            return `${hours}:${minutes}`;
+                        }
+                    } catch (e) {}
+                }
+                // 如果是 'HH:mm:ss'
+                if (timeValue.match(/^\d{2}:\d{2}:\d{2}$/)) {
+                     return timeValue.substring(0, 5);
+                }
+                // 如果是 'HH:mm'
+                if (timeValue.match(/^\d{2}:\d{2}$/)) {
+                    return timeValue;
+                }
+            }
+            // [修正] 檢查 Google 試算表回傳的 Date 物件
+            if (Object.prototype.toString.call(timeValue) === '[object Date]' && !isNaN(timeValue)) {
+                // [*** 修正 ***] 讀取本地時區
+                const hours = String(timeValue.getHours()).padStart(2, '0');
+                const minutes = String(timeValue.getMinutes()).padStart(2, '0');
+                return `${hours}:${minutes}`;
+            }
+            return '時間格式錯誤';
+        }
+
+        /**
+         * 初始化 Flatpickr 日期選擇器
+         */
+        function initializeDatePickers() {
+            // 預約日曆
+            appointmentDatePicker = flatpickr("#appointment-date", {
+                locale: "zh_tw", // 繁體中文
+                dateFormat: "Y-m-d",
+                disable: [], // 預設為空，由 fetchDaysOff() 填入
+                onChange: (selectedDates, dateStr) => {
+                    if (dateStr) {
+                        document.getElementById('date').value = dateStr; // 連動隱藏欄位
+                        submitAppointmentBtn.disabled = false;
+                        submitAppointmentBtn.textContent = '送出預約';
+                        fetchAppointments(dateStr); // 載入當日預約
+                        fetchDailyNote(dateStr); // [*** 新增 ***] 載入當日備註
+                    } else {
+                        document.getElementById('date').value = '';
+                        submitAppointmentBtn.disabled = true;
+                        submitAppointmentBtn.textContent = '請先選擇日期';
+                        clearAppointmentList(); // 清空列表
+                        appointmentListMessage.textContent = '請先從「新增預約」區塊選擇日期';
+                        appointmentListMessage.style.display = 'block';
+                        dailyNotesInput.value = ''; // [*** 新增 ***] 清空備註
+                        dailyNotesInput.disabled = true; // [*** 新增 ***] 禁用備註
+                    }
+                }
+            });
+            
+            // [*** 新增 ***] 預設禁用備註
+            dailyNotesInput.disabled = true;
+
+            // 公休多選日曆
+            dayOffDatePicker = flatpickr("#day-off-picker", {
+                locale: "zh_tw",
+                mode: "multiple",
+                dateFormat: "Y-m-d",
+                disable: [], // [新增] 預設為空，由 fetchDaysOff() 填入
+            });
+        }
+        
+        /**
+         * 更新預約日曆的禁用日期
+         */
+        function updateAppointmentCalendarDisabledDates() {
+            if (appointmentDatePicker) {
+                // [修正] 確保 currentDaysOff 是 YYYY-MM-DD 格式的陣列
+                const validDaysOff = currentDaysOff.map(d => formatSheetDate(d)).filter(d => d);
+                appointmentDatePicker.set('disable', validDaysOff);
+            }
+        }
+
+        /**
+         * [新增] 更新公休選單的禁用日期 (反灰)
+         */
+        function updateDayOffCalendarDisabledDates() {
+            if (dayOffDatePicker) {
+                const validDaysOff = currentDaysOff.map(d => formatSheetDate(d)).filter(d => d);
+                dayOffDatePicker.set('disable', validDaysOff);
+            }
+        }
+
+        /**
+         * 顯示提示訊息 (Toast)
+         */
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            
+            toastMessage.textContent = message;
+            toast.className = 'toast show'; // 移除舊的 success/error
+            if (isError) {
+                toast.classList.add('toast-error');
+            } else {
+                toast.classList.add('toast-success');
+            }
+
+            setTimeout(() => {
+                toast.className = 'toast';
+            }, 3000); // 3 秒後自動隱藏
+        }
+
+        /**
+         * [*** 關鍵修改 ***] 統一的 API 呼叫函式
+         * @param {string} method - 'GET' or 'POST'
+         * @param {string} action - 後端 action
+         * @param {object} body - 傳送的資料 (GET會變為 params, POST 會變為 payload)
+         * @param {boolean} includeStoreId - [新增] 是否自動夾帶 storeId (預設為 true)
+         */
+        async function apiCall(method, action, body = null, includeStoreId = true) {
+            let url = WEB_APP_URL;
+            const options = {
+                method: method,
+                headers: {},
+                mode: 'cors' 
+                // [*** 移除 ***] redirect: 'follow' (在 fetch 中是預設值，且有時會造成 CORS 問題)
+            };
+            
+            // [*** 新增 ***] 檢查 Store ID
+            if (includeStoreId && !currentStoreId) {
+                 // 允許 getStoreData
+                if (action === 'getStoreData') {
+                     includeStoreId = false; 
+                } else {
+                     throw new Error('錯誤：未選擇分店');
+                }
+            }
+
+            if (method === 'GET') {
+                const params = new URLSearchParams({ 
+                    action: action
+                });
+                
+                if (includeStoreId) {
+                    params.append('storeId', currentStoreId);
+                }
+                
+                if (body) { // 用於 getAppointments, getDailyNote
+                    Object.keys(body).forEach(key => params.append(key, body[key]));
+                }
+                
+                // [*** 關鍵修改 ***] 加入時間戳，防止快取 (Cache Busting)
+                params.append('t', new Date().getTime()); 
+                
+                url += '?' + params.toString();
+
+            } else if (method === 'POST') {
+                // [*** 修改 ***] POST 也需要 storeId
+                const payload = { action, ...body };
+                if (includeStoreId) {
+                    payload.storeId = currentStoreId;
+                }
+                
+                options.body = JSON.stringify(payload);
+                options.headers['Content-Type'] = 'text/plain;charset=utf-8';
+            }
+
+            try {
+                const response = await fetch(url, options);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    return result.data;
+                } else {
+                    throw new Error(result.message || 'API 回應錯誤');
+                }
+            } catch (error) {
+                console.error(`API 呼叫失敗 (${action}):`, error);
+                // [*** 修改 ***] 顯示更詳細的錯誤
+                showToast(`操作失敗 (${action}): ${error.message}`, true);
+                throw error; // 讓呼叫者知道發生了錯誤
+            }
+        }
+
+        // --- 事件處理函式 (GET) ---
+
+        /**
+         * [*** 修改 ***] 載入公休
+         */
+        async function fetchDaysOff() {
+            dayOffListLoader.style.display = 'block';
+            dayOffListMessage.style.display = 'none';
+            dayOffList.innerHTML = '';
+            currentDaysOff = []; // [*** 關鍵修改 ***] 先清空舊資料
+            
+            try {
+                // apiCall 會自動帶 storeId
+                const data = await apiCall('GET', 'getDaysOff'); 
+                
+                if (data && data.length > 0) {
+                    currentDaysOff = data.filter(d => d); 
+                    currentDaysOff.sort(); 
+                    currentDaysOff.forEach(renderDayOffItem);
+                } else {
+                    dayOffListMessage.textContent = '尚未設定公休。';
+                    dayOffListMessage.style.display = 'block';
+                }
+                
+            } catch (error) {
+                dayOffList.innerHTML = '';
+                dayOffListMessage.textContent = '讀取公休失敗。';
+                dayOffListMessage.style.display = 'block';
+            } finally {
+                // [*** 關鍵修改 ***] 無論成功或失敗，都要更新日曆 (失敗時傳入空陣列)
+                updateAppointmentCalendarDisabledDates(); 
+                updateDayOffCalendarDisabledDates(); 
+                dayOffListLoader.style.display = 'none';
+            }
+        }
+
+        /**
+         * [*** 修改 ***] 載入當日預約
+         */
+        async function fetchAppointments(date) {
+            clearAppointmentList(); // 先清空
+            appointmentListLoader.style.display = 'block';
+            
+            try {
+                // [*** 修改 ***] apiCall 自動帶 storeId, body 傳入 date
+                const data = await apiCall('GET', 'getAppointments', { date: date });
+                
+                appointmentListLoader.style.display = 'none';
+                
+                if (data && data.length > 0) {
+                    const groupedAppointments = groupAppointments(data);
+                    
+                    const sortedGroups = Object.values(groupedAppointments).sort((a, b) => {
+                        return a.time.localeCompare(b.time);
+                    });
+
+                    sortedGroups.forEach(renderGroupedAppointmentItem);
+                    
+                    updateServiceStats(data); // 更新統計
+                    updateTimeslotStats(data); // 更新時段隻數統計
+                } else {
+                    appointmentListMessage.textContent = '本日尚無預約。';
+                    appointmentListMessage.style.display = 'block';
+                    updateServiceStats([]); // 清空統計
+                    updateTimeslotStats([]); // 清空時段統計
+                }
+            } catch (error) {
+                appointmentListLoader.style.display = 'none';
+                appointmentList.innerHTML = ''; 
+                appointmentListMessage.textContent = '讀取預約失敗。';
+                appointmentListMessage.style.display = 'block';
+            }
+        }
+
+        /**
+         * [新增] 合併同一飼主 (手機+時間) 的預約
+         */
+        function groupAppointments(appointments) {
+            const groups = {}; 
+            
+            appointments.forEach(app => {
+                const time = formatHumanTime(app['時間']);
+                const phone = app['連絡電話'] || '未填';
+                const key = `${time}-${phone}`; // 用 時間+手機 當作 key
+
+                if (!groups[key]) {
+                    groups[key] = {
+                        time: time,
+                        phone: phone,
+                        pets: [], 
+                        services: [],
+                        notes: [],
+                        rowIDs: [],
+                        isApp: app['APP預約'] === 'Y' // [*** 新增 ***]
+                    };
+                }
+
+                groups[key].pets.push({
+                    name: app['寵物名'] || '未填',
+                    species: app['種類'] || '未填',
+                    breed: app['品種'] || '未填'
+                });
+                groups[key].services.push(app['服務內容'] || '未填');
+                if (app['備註']) { 
+                    groups[key].notes.push(app['備註']);
+                }
+                groups[key].rowIDs.push(app.rowID);
+            });
+            
+            return groups;
+        }
+
+
+        /**
+         * [移除] checkTimeSlotAvailability (已改用分店資料)
+         */
+
+        /**
+         * [*** 關鍵修改 ***] 更新服務統計 (加入 APP 統計)
+         */
+        function updateServiceStats(appointments) {
+            let beauty = 0;
+            let bath = 0;
+            let single = 0;
+            let appCount = 0; // [*** 新增 ***]
+
+            appointments.forEach(app => {
+                const service = app['服務內容'];
+                if (service === '美容') beauty++;
+                else if (service === '洗澡') bath++;
+                else if (service === '單項') single++;
+                
+                if (app['APP預約'] === 'Y') { // [*** 新增 ***]
+                    appCount++;
+                }
+            });
+
+            statsBeauty.textContent = `美容: ${beauty}`;
+            statsBath.textContent = `洗澡: ${bath}`;
+            statsSingle.textContent = `單項: ${single}`;
+            statsApp.textContent = `APP: ${appCount}`; // [*** 新增 ***]
+            
+            serviceStatsContainer.style.display = 'block';
+        }
+
+        /**
+         * [*** 修改 ***] 更新時段隻數統計 (套用樣式)
+         */
+        function updateTimeslotStats(appointments) {
+            const timeCounts = {};
+            // [*** 修改 ***] 從 timeSelect 動態讀取選項
+            const timeOptions = Array.from(timeSelect.options)
+                                   .map(opt => opt.value)
+                                   .filter(val => val); // 取得所有有效時段
+
+            // 初始化所有時段為 0
+            timeOptions.forEach(time => {
+                timeCounts[time] = 0;
+            });
+            
+            // 計算每個時段的預約數
+            appointments.forEach(app => {
+                const time = formatHumanTime(app['時間']);
+                if (timeCounts.hasOwnProperty(time)) {
+                    timeCounts[time]++;
+                }
+            });
+
+            // 產生 HTML
+            let statsHTML = '';
+            timeOptions.forEach(time => {
+                const count = timeCounts[time];
+                const timeLabel = time.replace(':', ''); // 10:00 -> 1000
+                
+                // [*** 關鍵修改 ***] 套用 service-badge 樣式
+                // 根據數量變換顏色
+                let colorClass = 'bg-gray-100 text-gray-700'; // 0 隻
+                if (count > 0 && count <= 2) { // 1-2 隻
+                    colorClass = 'bg-purple-100 text-purple-700'; // 有預約 (紫色)
+                } else if (count > 2) { // 超過 2 隻 (3隻以上)
+                    colorClass = 'bg-red-200 text-red-800 font-bold border border-red-300'; // 爆滿 (紅色)
+                }
+                
+                statsHTML += `<span class="service-badge ${colorClass}">${timeLabel}: ${count}隻</span>`;
+            });
+            
+            timeslotStatsContainer.innerHTML = statsHTML;
+            timeslotStatsContainer.style.display = 'flex'; // [修改] 改為 flex
+        }
+
+
+        /**
+         * [*** 修改 ***] 載入注意事項
+         */
+        async function fetchPetProfiles() {
+            petProfileListLoader.style.display = 'block';
+            petProfileListMessage.style.display = 'none';
+            petProfileList.innerHTML = '';
+            allPetProfiles = []; // [*** 關鍵修改 ***] 先清空舊資料
+            
+            try {
+                // apiCall 會自動帶 storeId
+                const data = await apiCall('GET', 'getPetProfiles'); 
+                
+                if (data && data.length > 0) {
+                    allPetProfiles = data; // 儲存
+                    data.sort((a, b) => {
+                        const nameA = `${a.breed || ''}${a.name || ''}`;
+                        const nameB = `${b.breed || ''}${b.name || ''}`;
+                        return nameA.localeCompare(nameB);
+                    });
+                    data.forEach(renderPetProfileItem);
+                } else {
+                    petProfileListMessage.style.display = 'block';
+                    petProfileListMessage.textContent = '尚未儲存任何注意事項。';
+                }
+            } catch (error) {
+                petProfileList.innerHTML = ''; 
+                if (error.message.includes('注意事項工作表欄位遺失')) {
+                    const errorMsg = '錯誤：Google 試算表欄位不符。請刪除 PetProfiles 工作表後再試。';
+                    petProfileListMessage.textContent = errorMsg;
+                    showToast('後端欄位錯誤，請刪除 PetProfiles 工作表', true);
+                } else {
+                    petProfileListMessage.textContent = '讀取注意事項失敗。';
+                }
+                petProfileListMessage.style.display = 'block';
+            } finally {
+                petProfileListLoader.style.display = 'none';
+            }
+        }
+        
+        /**
+         * [*** 新增 ***] 載入當日備註
+         */
+        async function fetchDailyNote(date) {
+            dailyNotesInput.value = '讀取中...';
+            dailyNotesInput.disabled = true;
+            try {
+                const data = await apiCall('GET', 'getDailyNote', { date: date });
+                dailyNotesInput.value = data || ''; // 載入備註
+            } catch (error) {
+                dailyNotesInput.value = ''; // 讀取失敗清空
+                // 備註讀取失敗不用跳錯誤，清空即可
+                // showToast('讀取當日備註失敗', true);
+            } finally {
+                dailyNotesInput.disabled = false;
+            }
+        }
+        
+        /**
+         * [修改] 檢查並顯示寵物注意事項 (for Pet 1-4)
+         */
+        function findAndDisplayPetNotes(petIndex) {
+            const breedInput = document.getElementById(`breed-${petIndex}`);
+            const nameInput = document.getElementById(`pet-name-${petIndex}`);
+            const notesDisplay = document.getElementById(`pet-notes-display-${petIndex}`);
+            const notesContent = document.getElementById(`pet-notes-content-${petIndex}`);
+
+            const breed = breedInput.value.trim();
+            const name = nameInput.value.trim();
+
+            if (!breed && !name) {
+                notesDisplay.style.display = 'none';
+                return;
+            }
+            
+            // [修正] 轉為小寫以進行不分大小寫比對
+            const breedLower = breed.toLowerCase();
+            const nameLower = name.toLowerCase();
+
+            const found = allPetProfiles.find(p => 
+                (p.breed || '').toLowerCase() === breedLower && 
+                (p.name || '').toLowerCase() === nameLower
+            );
+
+            if (found) {
+                notesContent.textContent = found.notes;
+                notesDisplay.style.display = 'block';
+            } else {
+                notesDisplay.style.display = 'none';
+            }
+        }
+
+        // --- 渲染函式 (Render) ---
+
+        /**
+         * 清空預約列表
+         */
+        function clearAppointmentList() {
+            appointmentList.innerHTML = '';
+            appointmentListLoader.style.display = 'none';
+            appointmentListMessage.style.display = 'none';
+            serviceStatsContainer.style.display = 'none'; // 隱藏統計
+            timeslotStatsContainer.style.display = 'none'; // [新增] 隱藏時段統計
+        }
+
+        /**
+         * [*** 關鍵修改 ***] 渲染 "合併後" 的預約 (加入 APP 標記)
+         */
+        function renderGroupedAppointmentItem(group) {
+            const item = document.createElement('div');
+            item.className = 'appointment-item';
+            
+            const petDetails = group.pets.map(pet => {
+                const species = pet.species || '未填';
+                const breed = pet.breed || '未填';
+                const name = pet.name || '未填'; 
+                return `[${species}] ${name} (${breed})`;
+            }).join('、');
+            
+            const services = group.services.join('、'); 
+            const notes = group.notes.length > 0 ? group.notes.join(' | ') : '無';
+            
+            let displayPhone = String(group.phone); 
+            if (!displayPhone || displayPhone === "undefined" || displayPhone === "null") {
+                 displayPhone = '未填';
+            }
+            
+            // [*** 新增 ***] APP 標記
+            const appLabel = group.isApp ? '<span class="text-xs font-bold text-cyan-600 border border-cyan-500 bg-cyan-100 rounded-full px-2 py-0.5 ml-2">APP</span>' : '';
+
+            const rowIDsJSON = JSON.stringify(group.rowIDs);
+
+            item.innerHTML = `
+                <div class="flex-1 min-w-0">
+                    <p class="text-lg font-semibold text-blue-600 truncate">
+                        ${group.time} - ${petDetails} ${appLabel}
+                    </p>
+                    <p class="text-sm text-gray-700">
+                        服務: ${services} | 電話: ${displayPhone}
+                    </p>
+                    <p class="text-sm text-gray-500 mt-1 break-words">
+                        備註: ${notes}
+                    </p>
+                </div>
+                <!-- [修改] 傳入 rowIDs 陣列, 並用 encodeURIComponent 處理特殊字元 -->
+                <button class="btn btn-danger btn-sm" onclick="handleDeleteAppointment(decodeURIComponent('${encodeURIComponent(rowIDsJSON)}'))">
+                    刪除
+                </button>
+            `;
+            appointmentList.appendChild(item);
+        }
+
+        /**
+         * 渲染單筆公休
+         */
+        function renderDayOffItem(dateString) {
+            if (!dateString) return; 
+            const formattedDate = formatHumanDate(dateString);
+            if (!formattedDate) return; 
+            
+            const item = document.createElement('div');
+            item.className = 'dayoff-item';
+            item.dataset.date = dateString; // 儲存 YYYY-MM-DD
+            
+            item.innerHTML = `
+                <span class="flex-1">${formattedDate}</span>
+                <button class="btn btn-danger btn-sm" onclick="handleDeleteDayOff(this)">
+                    移除
+                </button>
+            `;
+            dayOffList.appendChild(item);
+        }
+        
+        /**
+         * 渲染單筆注意事項
+         */
+        function renderPetProfileItem(pet) {
+            const item = document.createElement('div');
+            item.className = 'profile-item';
+            item.id = `profile-${pet.id}`;
+            
+            const breed = pet.breed || '未填品種';
+            const name = pet.name || '未填寵物名';
+            
+            item.innerHTML = `
+                <div class="flex-1 min-w-0">
+                    <p class="text-md font-semibold text-gray-800 truncate">
+                        ${breed} - ${name}
+                    </p>
+                    <p class="text-sm text-gray-600 mt-1 break-words">
+                        ${pet.notes || '無注意事項'}
+                    </p>
+                </div>
+                <div class="flex flex-col md:flex-row gap-2">
+                    <button class="btn btn-secondary btn-sm" onclick="handleEditPetProfile('${pet.id}')">編輯</button>
+                    <button class="btn btn-danger btn-sm" onclick="handleDeletePetProfile('${pet.id}')">刪除</button>
+                </div>
+            `;
+            petProfileList.appendChild(item);
+        }
+
+        // --- 事件處理函式 (POST / CUD) ---
+
+        /**
+         * [*** 關鍵修改 ***] 處理: 新增預約 (多筆, 加入 isApp)
+         */
+        async function handleAddAppointment(e) {
+            e.preventDefault();
+            
+            if (!currentStoreId) {
+                showToast('請先選擇分店', true);
+                return;
+            }
+            
+            const formData = new FormData(appointmentForm);
+            const sharedData = Object.fromEntries(formData.entries());
+
+            // 檢查日期和時間
+            if (!sharedData.date) {
+                showToast('請先從上方日曆選擇預約日期', true);
+                return;
+            }
+            if (!sharedData.time) {
+                showToast('請選擇預約時段', true);
+                return;
+            }
+
+            // [修改] 收集 1-4 隻寵物的資料
+            const pets = [];
+            for (let i = 1; i <= 4; i++) {
+                const petName = document.getElementById(`pet-name-${i}`).value.trim();
+                const service = document.getElementById(`service-${i}`).value;
+
+                // 只有當「寵物名」或「服務內容」有填時，才當作一筆預約
+                if (petName || service) {
+                    pets.push({
+                        species: document.getElementById(`species-${i}`).value,
+                        breed: document.getElementById(`breed-${i}`).value.trim(),
+                        petName: petName,
+                        service: service,
+                        notes: document.getElementById(`notes-${i}`).value.trim()
+                    });
+                }
+            }
+
+            if (pets.length === 0) {
+                showToast('請至少填寫一隻寵物的資料 (寵物名或服務內容)', true);
+                return;
+            }
+
+            submitAppointmentBtn.disabled = true;
+            submitAppointmentBtn.textContent = '送出中...';
+
+            try {
+                // [*** 關鍵修改 ***] 加入 isApp
+                const payload = {
+                    date: sharedData.date,
+                    time: sharedData.time,
+                    phone: sharedData.phone, 
+                    isApp: document.getElementById('is-app-booking').checked, // 傳入 true/false
+                    pets: pets // 傳送寵物陣列
+                };
+                
+                // apiCall 會自動帶 storeId
+                await apiCall('POST', 'addAppointment', payload);
+                showToast(`成功新增 ${pets.length} 筆預約！`);
+                
+                // 重置表單
+                appointmentForm.reset();
+                // [*** 新增 ***] 手動重置 checkbox
+                document.getElementById('is-app-booking').checked = false;
+                
+                // 關閉 Pet 2-4 的 <details>
+                for (let i = 2; i <= 4; i++) {
+                    const detail = document.querySelector(`.pet-accordion details:nth-of-type(${i})`);
+                    if (detail) detail.open = false;
+                    const noteDisplay = document.getElementById(`pet-notes-display-${i}`);
+                    if (noteDisplay) noteDisplay.style.display = 'none';
+                }
+                const noteDisplay1 = document.getElementById(`pet-notes-display-1`);
+                if (noteDisplay1) noteDisplay1.style.display = 'none';
+
+                // 重新載入預約 (會自動更新列表、統計)
+                fetchAppointments(sharedData.date); 
+                
+            } catch (error) {
+                // 錯誤已由 apiCall 顯示
+            } finally {
+                submitAppointmentBtn.disabled = false;
+                submitAppointmentBtn.textContent = '送出預約';
+            }
+        }
+
+        /**
+         * [修改] 處理: 刪除預約 (多筆)
+         */
+        async function handleDeleteAppointment(rowIDsJSON) {
+            const date = document.getElementById('date').value;
+            if (!date) return; // 安全檢查
+
+            let rowIDs;
+            try {
+                rowIDs = JSON.parse(rowIDsJSON); // 解析字串
+            } catch(e) {
+                showToast('刪除失敗：資料格式錯誤', true);
+                return;
+            }
+
+            if (!Array.isArray(rowIDs) || rowIDs.length === 0) {
+                showToast('刪除失敗：找不到對應資料', true);
+                return;
+            }
+            
+            try {
+                // apiCall 會自動帶 storeId
+                await apiCall('POST', 'deleteAppointments', { rowIDs: rowIDs });
+                showToast('預約已刪除');
+                fetchAppointments(date); // 重新載入
+            } catch (error) {
+                // 錯誤已由 apiCall 顯示
+            }
+        }
+        
+        /**
+         * 處理: 設定公休
+         */
+        async function handleSetDayOff(e) {
+            e.preventDefault();
+            const picker = document.getElementById('day-off-picker');
+            const dates = picker.value.split(', ').filter(d => d); // 過濾掉空字串
+            
+            if (dates.length === 0) {
+                showToast('請先選擇要設為公休的日期', true);
+                return;
+            }
+            
+            // [*** 新增 ***] 取得當前日曆的月份
+            const currentMonthDate = dayOffDatePicker.currentYear && dayOffDatePicker.currentMonth !== undefined
+                ? new Date(dayOffDatePicker.currentYear, dayOffDatePicker.currentMonth, 1)
+                : new Date(dates[0]); // 備用方案
+            const monthStr = formatSheetDate(currentMonthDate).substring(0, 7); // 'YYYY-MM'
+
+            dayOffSubmitBtn.disabled = true;
+            dayOffSubmitBtn.textContent = '設定中...';
+            
+            try {
+                // [*** 修改 ***] 傳入 dates 和 month
+                await apiCall('POST', 'setDaysOff', { dates: dates, month: monthStr });
+                showToast('公休設定成功');
+                fetchDaysOff(); // 重新載入公休列表 (會自動更新預約日曆)
+                dayOffDatePicker.clear(); // 清空選擇器
+            } catch (error) {
+                // 錯誤已由 apiCall 顯示
+            } finally {
+                dayOffSubmitBtn.disabled = false;
+                dayOffSubmitBtn.textContent = '設定公休';
+            }
+        }
+        
+        /**
+         * 處理: 刪除公休
+         */
+        async function handleDeleteDayOff(button) {
+            const item = button.closest('.dayoff-item');
+            const date = item.dataset.date;
+            
+            if (!date) return;
+            
+            try {
+                // apiCall 會自動帶 storeId
+                await apiCall('POST', 'deleteDayOff', { date: date });
+                showToast('公休已移除');
+                fetchDaysOff(); // 重新載入 (會自動更新預約日曆)
+            } catch (error) {
+                // 錯誤已由 apiCall 顯示
+            }
+        }
+        
+        /**
+         * 處理: 儲存/更新 注意事項
+         */
+        async function handleSavePetProfile(e) {
+            e.preventDefault();
+            const formData = new FormData(petProfileForm);
+            const data = Object.fromEntries(formData.entries());
+
+            // 基礎驗證
+            if (!data.breed && !data.name) {
+                showToast('品種和寵物名至少要填一個', true);
+                return;
+            }
+
+            const action = data.id ? 'updatePetProfile' : 'addPetProfile';
+            const successMessage = data.id ? '注意事項已更新' : '注意事項已儲存';
+            
+            profileSubmitBtn.disabled = true;
+            
+            try {
+                // apiCall 會自動帶 storeId
+                await apiCall('POST', action, data);
+                showToast(successMessage);
+                resetProfileForm();
+                fetchPetProfiles(); // 重新載入列表
+            } catch (error) {
+                // 錯誤已由 apiCall 顯示
+            } finally {
+                 profileSubmitBtn.disabled = false;
+            }
+        }
+        
+        /**
+         * 處理: 編輯 注意事項
+         */
+        function handleEditPetProfile(id) {
+            const pet = allPetProfiles.find(p => p.id === id);
+            if (!pet) return;
+            
+            profileIdInput.value = pet.id;
+            profileBreedInput.value = pet.breed || '';
+            profileNameInput.value = pet.name || '';
+            profileNotesInput.value = pet.notes || '';
+            
+            profileSubmitBtn.textContent = '確認更新';
+            profileCancelBtn.style.display = 'block';
+            
+            // 捲動到編輯表單
+            profileIdInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        /**
+         * 處理: 刪除 注意事項
+         */
+        async function handleDeletePetProfile(id) {
+            // [修正] 移除會被阻擋的 confirm
+            
+            try {
+                // apiCall 會自動帶 storeId
+                await apiCall('POST', 'deletePetProfile', { id: id });
+                showToast('注意事項已刪除');
+                fetchPetProfiles(); // 重新載入列表
+                // 如果正在編輯的項目被刪除，也重置表單
+                if (profileIdInput.value === id) {
+                    resetProfileForm();
+                }
+            } catch (error) {
+                // 錯誤已由 apiCall 顯示
+            }
+        }
+        
+        /**
+         * [*** 新增 ***] 處理: 儲存當日備註
+         */
+        async function handleSaveDailyNote() {
+            const date = document.getElementById('date').value;
+            if (!date) {
+                // 如果沒有選日期，就不用儲存
+                return;
+            }
+            
+            const notes = dailyNotesInput.value;
+            dailyNotesInput.disabled = true;
+            
+            try {
+                await apiCall('POST', 'saveDailyNote', { date: date, notes: notes });
+                showToast('備註已儲存', false); // 顯示成功訊息
+            } catch (error) {
+                // 錯誤已由 apiCall 顯示
+            } finally {
+                dailyNotesInput.disabled = false;
+            }
+        }
+        
+        /**
+         * 重置注意事項表單 (取消編輯)
+         */
+        function resetProfileForm() {
+            petProfileForm.reset();
+            profileIdInput.value = '';
+            profileSubmitBtn.textContent = '儲存新注意事項';
+            profileCancelBtn.style.display = 'none';
+        }
+
+    </script>
+
+</body>
+</html>
