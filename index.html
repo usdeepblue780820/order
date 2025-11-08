@@ -106,6 +106,12 @@
             cursor: not-allowed;
             opacity: 0.7;
         }
+        /* [*** 新增 ***] 唯讀文字框 */
+        .form-input:read-only {
+             background-color: #f9fafb; /* 淺灰色 */
+             color: #4b5563; /* 深灰色文字 */
+             cursor: default;
+        }
 
 
         /* 列表樣式 */
@@ -222,11 +228,44 @@
         <!-- 左側欄位 (佔 2/3) -->
         <div class="lg:col-span-2">
 
-            <!-- 卡片: 當日預約狀況 -->
+            <!-- [*** 關鍵新增 ***] 卡片: 今日預約狀況 (自動載入) -->
+            <div class="card" id="today-appointment-card">
+                <div class="flex justify-between items-start gap-4 mb-4">
+                    <h2 class="text-xl font-semibold pt-2">
+                        今日預約狀況 (<span id="today-date-display"></span>)
+                    </h2>
+                    <div class="w-full md:w-2/5 lg:w-3/5">
+                        <label for="today-daily-notes" class="form-label text-sm font-medium">當天備註 (唯讀):</label>
+                        <textarea id="today-daily-notes" rows="3" class="form-input text-sm p-2" readonly placeholder="載入中..."></textarea>
+                    </div>
+                </div>
+                
+                <div id="today-service-stats" class="mt-4 mb-2 hidden flex flex-wrap">
+                    <span id="today-stats-beauty" class="service-badge bg-blue-100 text-blue-700"></span>
+                    <span id="today-stats-bath" class="service-badge bg-green-100 text-green-700"></span>
+                    <span id="today-stats-single" class="service-badge bg-yellow-100 text-yellow-700"></span>
+                    <span id="today-stats-app" class="service-badge bg-cyan-100 text-cyan-700"></span>
+                </div>
+                
+                <div id="today-timeslot-stats" class="hidden flex flex-wrap pt-2 border-t border-gray-100 mt-2">
+                    <!-- 今日時段統計將動態插入此處 -->
+                </div>
+
+                <div class="mt-4">
+                    <div id="today-appointment-list-loader" class="text-gray-500 hidden">讀取中...</div>
+                    <div id="today-appointment-list-message" class="text-gray-500">載入中...</div>
+                    <div id="today-appointment-list">
+                        <!-- 今日預約項目將動態插入此處 -->
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- 卡片: 當日預約狀況 (手動選擇) -->
             <div class="card" id="appointment-status-card">
                 <!-- [*** 關鍵修改 ***] 加入標題和備註欄的 Flex 容器 -->
                 <div class="flex justify-between items-start gap-4 mb-4">
-                    <h2 class="text-xl font-semibold pt-2">當日預約狀況</h2>
+                    <h2 class="text-xl font-semibold pt-2">查詢指定日預約</h2>
                     
                     <!-- [*** 關鍵新增 ***] 當天備註文字框 (會自動儲存) -->
                     <div class="w-full md:w-2/5 lg:w-3/5">
@@ -555,12 +594,27 @@
         var dayOffDatePicker; // 公休R歷實例
         var allStores = []; // [*** 新增 ***] 儲存所有分店資料
         var currentStoreId = null; // [*** 新增 ***] 當前選擇的分店 ID
+        var todayDateString = formatSheetDate(new Date()); // [*** 新增 ***]
 
         // --- DOM 元素 ---
         var globalLoader = document.getElementById('global-loader');
         var mainContainer = document.getElementById('main-container');
         var storeSelect = document.getElementById('store-select');
 
+        // [*** 新增 ***] 今日預約 (Today)
+        var todayDateDisplay = document.getElementById('today-date-display');
+        var todayDailyNotesInput = document.getElementById('today-daily-notes');
+        var todayServiceStatsContainer = document.getElementById('today-service-stats');
+        var todayStatsBeauty = document.getElementById('today-stats-beauty');
+        var todayStatsBath = document.getElementById('today-stats-bath');
+        var todayStatsSingle = document.getElementById('today-stats-single');
+        var todayStatsApp = document.getElementById('today-stats-app');
+        var todayTimeslotStatsContainer = document.getElementById('today-timeslot-stats');
+        var todayAppointmentListLoader = document.getElementById('today-appointment-list-loader');
+        var todayAppointmentListMessage = document.getElementById('today-appointment-list-message');
+        var todayAppointmentList = document.getElementById('today-appointment-list');
+
+        // [*** 修改 ***] 指定日預約 (Manual)
         var appointmentDateInput = document.getElementById('appointment-date');
         var appointmentList = document.getElementById('appointment-list');
         var appointmentListLoader = document.getElementById('appointment-list-loader');
@@ -572,7 +626,7 @@
         var dayOffList = document.getElementById('day-off-list');
         var dayOffListLoader = document.getElementById('day-off-list-loader');
         var dayOffListMessage = document.getElementById('day-off-list-message');
-        var dayOffSubmitBtn = document.getElementById('day-off-submit-btn'); // [*** 新增 ***]
+        var dayOffSubmitBtn = document.getElementById('day-off-submit-btn'); 
         
         var petProfileList = document.getElementById('pet-profile-list');
         var petProfileListLoader = document.getElementById('pet-profile-list-loader');
@@ -589,15 +643,18 @@
         var statsBeauty = document.getElementById('stats-beauty');
         var statsBath = document.getElementById('stats-bath');
         var statsSingle = document.getElementById('stats-single');
-        var statsApp = document.getElementById('stats-app'); // [*** 新增 ***]
+        var statsApp = document.getElementById('stats-app'); 
         
         var timeslotStatsContainer = document.getElementById('timeslot-stats');
         
-        var dailyNotesInput = document.getElementById('daily-notes'); // [*** 新增 ***]
+        var dailyNotesInput = document.getElementById('daily-notes'); 
 
 
         // --- 頁面初始化 ---
         document.addEventListener('DOMContentLoaded', () => {
+            // [*** 新增 ***] 顯示今天日期
+            todayDateDisplay.textContent = formatHumanDate(todayDateString);
+
             // 1. [*** 修改 ***] 初始化日期選擇器 (先初始化，但保持禁用)
             initializeDatePickers();
             
@@ -659,7 +716,7 @@
         }
         
         /**
-         * [新增] 處理分店切換
+         * [*** 修改 ***] 處理分店切換
          */
         function handleStoreChange() {
             currentStoreId = storeSelect.value;
@@ -676,7 +733,11 @@
             if (dayOffDatePicker) dayOffDatePicker.clear();
             
             // 2. 清空畫面
-            clearAppointmentList();
+            clearAppointmentList('manual'); // [*** 修改 ***]
+            clearAppointmentList('today'); // [*** 新增 ***]
+            todayAppointmentListMessage.textContent = '載入中...';
+            todayAppointmentListLoader.style.display = 'block';
+
             dayOffList.innerHTML = '';
             dayOffListLoader.style.display = 'block';
             dayOffListMessage.style.display = 'none';
@@ -691,6 +752,10 @@
             // 4. 載入該分店的資料
             fetchDaysOff(); // 載入公休 (會觸發更新日曆)
             fetchPetProfiles(); // 載入注意事項
+            
+            // 5. [*** 新增 ***] 自動載入 "今天" 的預約
+            fetchAppointments(todayDateString, 'today');
+            fetchDailyNote(todayDateString, 'today');
         }
 
 
@@ -844,13 +909,13 @@
                         document.getElementById('date').value = dateStr; // 連動隱藏欄位
                         submitAppointmentBtn.disabled = false;
                         submitAppointmentBtn.textContent = '送出預約';
-                        fetchAppointments(dateStr); // 載入當日預約
-                        fetchDailyNote(dateStr); // [*** 新增 ***] 載入當日備註
+                        fetchAppointments(dateStr, 'manual'); // [*** 修改 ***]
+                        fetchDailyNote(dateStr, 'manual'); // [*** 修改 ***]
                     } else {
                         document.getElementById('date').value = '';
                         submitAppointmentBtn.disabled = true;
                         submitAppointmentBtn.textContent = '請先選擇日期';
-                        clearAppointmentList(); // 清空列表
+                        clearAppointmentList('manual'); // [*** 修改 ***]
                         appointmentListMessage.textContent = '請先從「新增預約」區塊選擇日期';
                         appointmentListMessage.style.display = 'block';
                         dailyNotesInput.value = ''; // [*** 新增 ***] 清空備註
@@ -1026,17 +1091,26 @@
         }
 
         /**
-         * [*** 修改 ***] 載入當日預約
+         * [*** 關鍵修改 ***] 載入當日預約 (type: 'today' 或 'manual')
+         * @param {string} date - YYYY-MM-DD
+         * @param {string} type - 'today' 或 'manual'
          */
-        async function fetchAppointments(date) {
-            clearAppointmentList(); // 先清空
-            appointmentListLoader.style.display = 'block';
+        async function fetchAppointments(date, type = 'manual') {
+            const isToday = type === 'today';
+            
+            // 1. 取得對應的 DOM 元素
+            const loader = isToday ? todayAppointmentListLoader : appointmentListLoader;
+            const list = isToday ? todayAppointmentList : appointmentList;
+            const message = isToday ? todayAppointmentListMessage : appointmentListMessage;
+            
+            // 2. 清空 & 顯示載入中
+            clearAppointmentList(type); 
+            loader.style.display = 'block';
             
             try {
-                // [*** 修改 ***] apiCall 自動帶 storeId, body 傳入 date
                 const data = await apiCall('GET', 'getAppointments', { date: date });
                 
-                appointmentListLoader.style.display = 'none';
+                loader.style.display = 'none';
                 
                 if (data && data.length > 0) {
                     const groupedAppointments = groupAppointments(data);
@@ -1045,21 +1119,26 @@
                         return a.time.localeCompare(b.time);
                     });
 
-                    sortedGroups.forEach(renderGroupedAppointmentItem);
+                    // 3. 渲染列表
+                    sortedGroups.forEach(group => {
+                        // [*** 修改 ***] 傳入 type
+                        renderGroupedAppointmentItem(group, type); 
+                    });
                     
-                    updateServiceStats(data); // 更新統計
-                    updateTimeslotStats(data); // 更新時段隻數統計
+                    // 4. 更新統計
+                    updateServiceStats(data, type); 
+                    updateTimeslotStats(data, type); 
                 } else {
-                    appointmentListMessage.textContent = '本日尚無預約。';
-                    appointmentListMessage.style.display = 'block';
-                    updateServiceStats([]); // 清空統計
-                    updateTimeslotStats([]); // 清空時段統計
+                    message.textContent = isToday ? '今日尚無預約。' : '本日尚無預約。';
+                    message.style.display = 'block';
+                    updateServiceStats([], type); // 清空統計
+                    updateTimeslotStats([], type); // 清空時段統計
                 }
             } catch (error) {
-                appointmentListLoader.style.display = 'none';
-                appointmentList.innerHTML = ''; 
-                appointmentListMessage.textContent = '讀取預約失敗。';
-                appointmentListMessage.style.display = 'block';
+                loader.style.display = 'none';
+                list.innerHTML = ''; 
+                message.textContent = '讀取預約失敗。';
+                message.style.display = 'block';
             }
         }
 
@@ -1108,17 +1187,25 @@
 
 
         /**
-         * [移除] checkTimeSlotAvailability (已改用分店資料)
-         */
-
-        /**
          * [*** 關鍵修改 ***] 更新服務統計 (加入 APP 統計)
+         * @param {Array} appointments - 預約資料
+         * @param {string} type - 'today' 或 'manual'
          */
-        function updateServiceStats(appointments) {
+        function updateServiceStats(appointments, type = 'manual') {
+            const isToday = type === 'today';
+            
+            // 1. 取得 DOM 元素
+            const container = isToday ? todayServiceStatsContainer : serviceStatsContainer;
+            const beautyEl = isToday ? todayStatsBeauty : statsBeauty;
+            const bathEl = isToday ? todayStatsBath : statsBath;
+            const singleEl = isToday ? todayStatsSingle : statsSingle;
+            const appEl = isToday ? todayStatsApp : statsApp;
+            
+            // 2. 計算
             let beauty = 0;
             let bath = 0;
             let single = 0;
-            let appCount = 0; // [*** 新增 ***]
+            let appCount = 0; 
 
             appointments.forEach(app => {
                 const service = app['服務內容'];
@@ -1126,25 +1213,33 @@
                 else if (service === '洗澡') bath++;
                 else if (service === '單項') single++;
                 
-                if (app['APP預約'] === 'Y') { // [*** 新增 ***]
+                if (app['APP預約'] === 'Y') { 
                     appCount++;
                 }
             });
 
-            statsBeauty.textContent = `美容: ${beauty}`;
-            statsBath.textContent = `洗澡: ${bath}`;
-            statsSingle.textContent = `單項: ${single}`;
-            statsApp.textContent = `APP: ${appCount}`; // [*** 新增 ***]
+            // 3. 渲染
+            beautyEl.textContent = `美容: ${beauty}`;
+            bathEl.textContent = `洗澡: ${bath}`;
+            singleEl.textContent = `單項: ${single}`;
+            appEl.textContent = `APP: ${appCount}`; 
             
-            serviceStatsContainer.style.display = 'flex'; // [*** 修改 ***]
+            container.style.display = 'flex'; 
         }
 
         /**
-         * [*** 修改 ***] 更新時段隻數統計 (套用樣式)
+         * [*** 關鍵修改 ***] 更新時段隻數統計 (套用樣式)
+         * @param {Array} appointments - 預約資料
+         * @param {string} type - 'today' 或 'manual'
          */
-        function updateTimeslotStats(appointments) {
+        function updateTimeslotStats(appointments, type = 'manual') {
+            const isToday = type === 'today';
+            
+            // 1. 取得 DOM 元素
+            const container = isToday ? todayTimeslotStatsContainer : timeslotStatsContainer;
+            
+            // 2. 取得時段選項 (從 "新增預約" 的下拉選單)
             const timeCounts = {};
-            // [*** 修改 ***] 從 timeSelect 動態讀取選項
             const timeOptions = Array.from(timeSelect.options)
                                    .map(opt => opt.value)
                                    .filter(val => val); // 取得所有有效時段
@@ -1180,8 +1275,8 @@
                 statsHTML += `<span class="service-badge ${colorClass}">${timeLabel}: ${count}隻</span>`;
             });
             
-            timeslotStatsContainer.innerHTML = statsHTML;
-            timeslotStatsContainer.style.display = 'flex'; // [修改] 改為 flex
+            container.innerHTML = statsHTML;
+            container.style.display = 'flex'; // [修改] 改為 flex
         }
 
 
@@ -1226,20 +1321,28 @@
         }
         
         /**
-         * [*** 新增 ***] 載入當日備註
+         * [*** 關鍵修改 ***] 載入當日備註
+         * @param {string} date - YYYY-MM-DD
+         * @param {string} type - 'today' (唯讀) 或 'manual' (可編輯)
          */
-        async function fetchDailyNote(date) {
-            dailyNotesInput.value = '讀取中...';
-            dailyNotesInput.disabled = true;
+        async function fetchDailyNote(date, type = 'manual') {
+            const isToday = type === 'today';
+            const inputEl = isToday ? todayDailyNotesInput : dailyNotesInput;
+            
+            inputEl.value = '讀取中...';
+            if (!isToday) inputEl.disabled = true; // 'today' 永遠是 disabled (readonly)
+            
             try {
                 const data = await apiCall('GET', 'getDailyNote', { date: date });
-                dailyNotesInput.value = data || ''; // 載入備註
+                inputEl.value = data || ''; // 載入備註
             } catch (error) {
-                dailyNotesInput.value = ''; // 讀取失敗清空
-                // 備註讀取失敗不用跳錯誤，清空即可
-                // showToast('讀取當日備註失敗', true);
+                inputEl.value = ''; // 讀取失敗清空
+                // 備註讀取失敗不用跳錯誤，清空即可 (只在 'manual' 提示)
+                if (!isToday) {
+                    showToast('讀取當日備註失敗', true);
+                }
             } finally {
-                dailyNotesInput.disabled = false;
+                 if (!isToday) inputEl.disabled = false;
             }
         }
         
@@ -1280,20 +1383,36 @@
         // --- 渲染函式 (Render) ---
 
         /**
-         * 清空預約列表
+         * [*** 關鍵修改 ***] 清空預約列表
+         * @param {string} type - 'today' 或 'manual'
          */
-        function clearAppointmentList() {
-            appointmentList.innerHTML = '';
-            appointmentListLoader.style.display = 'none';
-            appointmentListMessage.style.display = 'none';
-            serviceStatsContainer.style.display = 'none'; // 隱藏統計
-            timeslotStatsContainer.style.display = 'none'; // [新增] 隱藏時段統計
+        function clearAppointmentList(type = 'manual') {
+            const isToday = type === 'today';
+            
+            // 1. 取得 DOM 元素
+            const list = isToday ? todayAppointmentList : appointmentList;
+            const loader = isToday ? todayAppointmentListLoader : appointmentListLoader;
+            const message = isToday ? todayAppointmentListMessage : appointmentListMessage;
+            const statsContainer = isToday ? todayServiceStatsContainer : serviceStatsContainer;
+            const timeslotContainer = isToday ? todayTimeslotStatsContainer : timeslotStatsContainer;
+
+            // 2. 清空
+            list.innerHTML = '';
+            loader.style.display = 'none';
+            message.style.display = 'none';
+            statsContainer.style.display = 'none'; // 隱藏統計
+            timeslotContainer.style.display = 'none'; // [新增] 隱藏時段統計
         }
 
         /**
          * [*** 關鍵修改 ***] 渲染 "合併後" 的預約 (加入 APP 標記)
+         * @param {Object} group - 合併後的預約群組
+         * @param {string} type - 'today' 或 'manual'
          */
-        function renderGroupedAppointmentItem(group) {
+        function renderGroupedAppointmentItem(group, type = 'manual') {
+            const isToday = type === 'today';
+            const list = isToday ? todayAppointmentList : appointmentList;
+            
             const item = document.createElement('div');
             item.className = 'appointment-item';
             
@@ -1330,11 +1449,13 @@
                     </p>
                 </div>
                 <!-- [修改] 傳入 rowIDs 陣列, 並用 encodeURIComponent 處理特殊字元 -->
-                <button class="btn btn-danger btn-sm" onclick="handleDeleteAppointment(decodeURIComponent('${encodeURIComponent(rowIDsJSON)}'))">
+                <!-- [*** 關鍵修改 ***] 刪除按鈕只在 'manual' 模式下顯示 -->
+                ${!isToday ? 
+                `<button class="btn btn-danger btn-sm" onclick="handleDeleteAppointment(decodeURIComponent('${encodeURIComponent(rowIDsJSON)}'))">
                     刪除
-                </button>
+                </button>` : ''}
             `;
-            appointmentList.appendChild(item);
+            list.appendChild(item);
         }
 
         /**
@@ -1467,8 +1588,12 @@
                 const noteDisplay1 = document.getElementById(`pet-notes-display-1`);
                 if (noteDisplay1) noteDisplay1.style.display = 'none';
 
-                // 重新載入預約 (會自動更新列表、統計)
-                fetchAppointments(sharedData.date); 
+                // [*** 關鍵修改 ***] 重新載入兩個列表
+                fetchAppointments(sharedData.date, 'manual'); 
+                if (sharedData.date === todayDateString) {
+                    fetchAppointments(todayDateString, 'today');
+                    fetchDailyNote(todayDateString, 'today');
+                }
                 
             } catch (error) {
                 // 錯誤已由 apiCall 顯示
@@ -1502,7 +1627,13 @@
                 // apiCall 會自動帶 storeId
                 await apiCall('POST', 'deleteAppointments', { rowIDs: rowIDs });
                 showToast('預約已刪除');
-                fetchAppointments(date); // 重新載入
+                
+                // [*** 關鍵修改 ***] 重新載入兩個列表
+                fetchAppointments(date, 'manual'); // 重新載入
+                if (date === todayDateString) {
+                    fetchAppointments(todayDateString, 'today');
+                }
+                
             } catch (error) {
                 // 錯誤已由 apiCall 顯示
             }
@@ -1650,6 +1781,11 @@
             try {
                 await apiCall('POST', 'saveDailyNote', { date: date, notes: notes });
                 showToast('備註已儲存', false); // 顯示成功訊息
+                
+                // [*** 新增 ***] 如果儲存的是 "今天"，同步更新 "今日備註"
+                if (date === todayDateString) {
+                    todayDailyNotesInput.value = notes;
+                }
             } catch (error) {
                 // 錯誤已由 apiCall 顯示
             } finally {
