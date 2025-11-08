@@ -125,7 +125,7 @@
         .service-badge {
             display: inline-block;
             padding: 0.25rem 0.75rem;
-            border-radius: 9999px; /* 膠囊狀 */
+            border-radius: 9999px; /* 膠囊状 */
             font-size: 0.875rem;
             font-weight: 600;
             margin-right: 0.5rem;
@@ -237,7 +237,7 @@
                 
                 <!-- 服務統計 -->
                 <!-- [*** 關鍵修改 ***] 加入 stats-app -->
-                <div id="service-stats" class="mt-4 mb-2 hidden">
+                <div id="service-stats" class="mt-4 mb-2 hidden flex flex-wrap">
                     <span id="stats-beauty" class="service-badge bg-blue-100 text-blue-700"></span>
                     <span id="stats-bath" class="service-badge bg-green-100 text-green-700"></span>
                     <span id="stats-single" class="service-badge bg-yellow-100 text-yellow-700"></span>
@@ -546,7 +546,8 @@
 
     <script>
         // --- 全局設定 ---
-        var WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxZ8Z16SBwAxn0AeycM6VxRLrOyO8Hy9vJ2U4PQkEq8n8GNFZFViYneIT8yQTo5hitX7A/exec'; // [*** 請務必替換成您新部署的網址 ***]
+        // [*** 關鍵 ***] 請務必替換成您新部署的網址 (修改後端後，必須重新部署)
+        var WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxZ8Z16SBwAxn0AeycM6VxRLrOyO8Hy9vJ2U4PQkEq8n8GNFZFViYneIT8yQTo5hitX7A/exec'; 
         
         var allPetProfiles = []; // 儲存所有寵物注意事項
         var currentDaysOff = []; // 儲存所有公休日
@@ -792,7 +793,7 @@
         }
         
         /**
-         * 輔助函式：格式化時間 (HH:mm)
+         * [*** 關鍵修正 ***] 輔助函式：格式化時間 (HH:mm)
          */
         function formatHumanTime(timeValue) {
             if (!timeValue) return '未填';
@@ -924,7 +925,7 @@
                 method: method,
                 headers: {},
                 mode: 'cors' 
-                // [*** 移除 ***] redirect: 'follow' (在 fetch 中是預設值，且有時會造成 CORS 問題)
+                // [*** 修正 ***] 移除 redirect: 'follow'
             };
             
             // [*** 新增 ***] 檢查 Store ID
@@ -1063,15 +1064,20 @@
         }
 
         /**
-         * [新增] 合併同一飼主 (手機+時間) 的預約
+         * [*** 關鍵修正 ***] 合併同一飼主 (手機+時間) 的預約
          */
         function groupAppointments(appointments) {
             const groups = {}; 
             
-            appointments.forEach(app => {
+            appointments.forEach((app, index) => {
                 const time = formatHumanTime(app['時間']);
                 const phone = app['連絡電話'] || '未填';
-                const key = `${time}-${phone}`; // 用 時間+手機 當作 key
+                
+                // [*** 關鍵修正 ***]
+                // 如果電話未填，則使用 index (索引) 當作獨一無二的 key，確保不合併
+                const key = (phone !== '未填' && phone !== '')
+                    ? `${time}-${phone}` 
+                    : `${time}-NO-PHONE-${index}`; // 確保未填電話的預約各自獨立
 
                 if (!groups[key]) {
                     groups[key] = {
@@ -1130,7 +1136,7 @@
             statsSingle.textContent = `單項: ${single}`;
             statsApp.textContent = `APP: ${appCount}`; // [*** 新增 ***]
             
-            serviceStatsContainer.style.display = 'block';
+            serviceStatsContainer.style.display = 'flex'; // [*** 修改 ***]
         }
 
         /**
