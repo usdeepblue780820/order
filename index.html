@@ -84,6 +84,7 @@
             border: 1px solid #d1d5db;
             color: #3b82f6;
             transition: border-color 0.3s, box-shadow 0.3s;
+            cursor: pointer;
         }
         .form-checkbox:focus {
              outline: none;
@@ -211,13 +212,20 @@
         <span class="text-white text-xl font-semibold">讀取分店資料中...</span>
     </div>
 
-    <!-- [*** 新增 ***] 分店選擇 -->
-    <div class="max-w-md mx-auto mb-6 lg:max-w-none lg:mx-0">
+    <!-- [*** 關鍵修改 ***] 分店選擇 + 鎖定 -->
+    <div class="max-w-xl mx-auto mb-6 lg:max-w-none lg:mx-0">
         <label for="store-select" class="form-label text-xl font-semibold">請選擇分店：</label>
-        <select id="store-select" class="form-select text-lg p-3">
-            <option value="">讀取分店列表中...</option>
-        </select>
+        <div class="flex items-center gap-4">
+            <select id="store-select" class="form-select text-lg p-3 flex-1">
+                <option value="">讀取分店列表中...</option>
+            </select>
+            <div class="flex items-center pt-2">
+                <input type="checkbox" id="lock-store" class="form-checkbox mr-2">
+                <label for="lock-store" class="form-label mb-0 whitespace-nowrap">鎖定店別</label>
+            </div>
+        </div>
     </div>
+
 
     <h1 class="text-3xl font-bold text-gray-800 mb-6 hidden">美容預約</h1>
 
@@ -595,11 +603,13 @@
         var allStores = []; // [*** 新增 ***] 儲存所有分店資料
         var currentStoreId = null; // [*** 新增 ***] 當前選擇的分店 ID
         var todayDateString = formatSheetDate(new Date()); // [*** 新增 ***]
+        var LOCK_STORE_KEY = 'petBookingApp_storeLock'; // [*** 新增 ***] localStorage Key
 
         // --- DOM 元素 ---
         var globalLoader = document.getElementById('global-loader');
         var mainContainer = document.getElementById('main-container');
         var storeSelect = document.getElementById('store-select');
+        var lockStoreCheckbox = document.getElementById('lock-store'); // [*** 新增 ***]
 
         // [*** 新增 ***] 今日預約 (Today)
         var todayDateDisplay = document.getElementById('today-date-display');
@@ -663,6 +673,8 @@
 
             // 3. 綁定事件
             storeSelect.addEventListener('change', handleStoreChange);
+            lockStoreCheckbox.addEventListener('change', handleLockStore); // [*** 新增 ***]
+            
             appointmentForm.addEventListener('submit', handleAddAppointment);
             document.getElementById('day-off-form').addEventListener('submit', handleSetDayOff);
             petProfileForm.addEventListener('submit', handleSavePetProfile);
@@ -692,8 +704,23 @@
                         storeSelect.appendChild(option);
                     });
                     
-                    // [*** 自動選擇 S5100 (湖口中山店) ***]
-                    const defaultStoreId = 'S5100';
+                    // [*** 關鍵修改 ***] 檢查 localStorage 是否有鎖定
+                    const lockedStoreId = localStorage.getItem(LOCK_STORE_KEY);
+                    let defaultStoreId = 'S5100'; // 預設S5100
+
+                    if (lockedStoreId && allStores.find(s => s.id === lockedStoreId)) {
+                        // 如果有鎖定，使用鎖定的ID
+                        defaultStoreId = lockedStoreId;
+                        lockStoreCheckbox.checked = true; // 勾選鎖定
+                        storeSelect.disabled = true; // 禁用下拉選單
+                    } else {
+                        // 如果沒有鎖定，清除 localStorage
+                         localStorage.removeItem(LOCK_STORE_KEY);
+                         lockStoreCheckbox.checked = false;
+                         storeSelect.disabled = false;
+                    }
+                    
+                    // [*** 修改 ***] 自動選擇 (可能是鎖定的，也可能是 S5100)
                     if (allStores.find(s => s.id === defaultStoreId)) {
                         storeSelect.value = defaultStoreId;
                         handleStoreChange(); // 手動觸發一次變更事件
@@ -720,6 +747,11 @@
          */
         function handleStoreChange() {
             currentStoreId = storeSelect.value;
+            
+            // [*** 新增 ***] 如果是鎖定狀態，則儲存
+            if (lockStoreCheckbox.checked) {
+                localStorage.setItem(LOCK_STORE_KEY, currentStoreId);
+            }
             
             if (!currentStoreId) {
                 mainContainer.classList.add('disabled-card'); // 禁用主畫面
@@ -756,6 +788,29 @@
             // 5. [*** 新增 ***] 自動載入 "今天" 的預約
             fetchAppointments(todayDateString, 'today');
             fetchDailyNote(todayDateString, 'today');
+        }
+        
+        /**
+         * [*** 新增 ***] 處理鎖定店別
+         */
+        function handleLockStore() {
+            if (lockStoreCheckbox.checked) {
+                // 鎖定
+                if (currentStoreId) {
+                    localStorage.setItem(LOCK_STORE_KEY, currentStoreId);
+                    storeSelect.disabled = true;
+                    showToast(`已鎖定分店: ${storeSelect.options[storeSelect.selectedIndex].text}`, false);
+                } else {
+                    // 如果還沒選店，不給鎖
+                    lockStoreCheckbox.checked = false;
+                    showToast('請先選擇一間分店再鎖定', true);
+                }
+            } else {
+                // 解鎖
+                localStorage.removeItem(LOCK_STORE_KEY);
+                storeSelect.disabled = false;
+                showToast('分店已解鎖', false);
+            }
         }
 
 
@@ -1592,7 +1647,6 @@
                 fetchAppointments(sharedData.date, 'manual'); 
                 if (sharedData.date === todayDateString) {
                     fetchAppointments(todayDateString, 'today');
-                    fetchDailyNote(todayDateString, 'today');
                 }
                 
             } catch (error) {
