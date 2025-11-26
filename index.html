@@ -162,17 +162,38 @@
     <!-- 頂部導航列 -->
     <header class="bg-white shadow-sm z-20 sticky top-0">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <!-- [修改] 換成圖片 icon.ico -->
-                <img src="icon.ico" alt="Logo" class="w-12 h-12 rounded-lg object-contain">
-                <div>
-                    <h1 class="text-lg font-bold leading-tight">美容預約表</h1>
-                    <div class="text-xs text-gray-500" id="current-store-name">讀取中...</div>
+            
+            <!-- 左側區塊：Logo + 標題 + 支持區塊 -->
+            <div class="flex items-center gap-6">
+                <!-- Logo & Title -->
+                <div class="flex items-center gap-3">
+                    <img src="icon.ico" alt="Logo" class="w-12 h-12 rounded-lg object-contain">
+                    <div>
+                        <h1 class="text-lg font-bold leading-tight">美容預約表</h1>
+                        <div class="text-xs text-gray-500" id="current-store-name">讀取中...</div>
+                    </div>
+                </div>
+
+                <!-- [新增] 支持區塊 (頭像+IG連結) -->
+                <div class="hidden md:flex items-center gap-3 px-3 py-1.5 bg-gray-50 rounded-full border border-gray-100">
+                    <!-- 4張頭像 (圓形重疊) -->
+                    <div class="flex -space-x-2">
+                        <img src="4.ico" class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" alt="Support 4">
+                        <img src="3.ico" class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" alt="Support 3">
+                        <img src="2.ico" class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" alt="Support 2">
+                        <img src="1.ico" class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" alt="Support 1">
+                    </div>
+                    
+                    <!-- 文字與 IG 圖示 -->
+                    <a href="https://www.instagram.com/tsikkong/?igsh=MTdqYmV6YmNoeGhpZg%3D%3D&utm_source=qr" target="_blank" class="flex items-center gap-1.5 text-sm text-blue-600 font-medium hover:text-blue-800 hover:underline transition">
+                        <i class="fa-brands fa-instagram text-lg"></i>
+                        <span>沒有要斗內，但可以點進來支持一下</span>
+                    </a>
                 </div>
             </div>
             
+            <!-- 右側區塊：控制項 -->
             <div class="flex items-center gap-2">
-                <!-- 分店選擇 -->
                 <select id="store-select" class="form-select text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
                     <option value="">載入分店...</option>
                 </select>
@@ -236,7 +257,7 @@
                 </div>
             </div>
 
-            <!-- 讀取遮罩 (修正版) -->
+            <!-- 讀取遮罩 -->
             <div id="loader" class="loader-overlay absolute inset-0 z-30 flex flex-col items-center justify-center hidden">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-3"></div>
                 <p class="text-gray-600 font-medium" id="loader-text">資料同步中...</p>
@@ -325,6 +346,7 @@
         // 設定區
         const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxZ8Z16SBwAxn0AeycM6VxRLrOyO8Hy9vJ2U4PQkEq8n8GNFZFViYneIT8yQTo5hitX7A/exec';
         
+        // 宣告全域變數 (避免 ReferenceError)
         let allStores = [];
         let currentStoreId = null;
         let currentDate = new Date();
@@ -336,19 +358,23 @@
         let isCurrentDateFull = false;
         let scheduleCache = {};
 
-        // DOM 元素
-        const storeSelect = document.getElementById('store-select');
-        const navDatePickerInput = document.getElementById('nav-date-picker');
-        const businessDaysContainer = document.getElementById('business-days-container');
-        const scheduleBody = document.getElementById('schedule-body');
-        const loader = document.getElementById('loader');
-        const loaderText = document.getElementById('loader-text');
-        const lockBtn = document.getElementById('lock-store-btn');
-        const lockIcon = document.getElementById('lock-icon');
-        const dailyNoteInput = document.getElementById('daily-note');
-        const isFullCheckbox = document.getElementById('is-full-checkbox');
+        // DOM 元素變數宣告
+        let storeSelect, navDatePickerInput, businessDaysContainer, scheduleBody, loader, loaderText, lockBtn, lockIcon, modal, dailyNoteInput, isFullCheckbox;
 
         document.addEventListener('DOMContentLoaded', async () => {
+            // 初始化 DOM 變數
+            storeSelect = document.getElementById('store-select');
+            navDatePickerInput = document.getElementById('nav-date-picker');
+            businessDaysContainer = document.getElementById('business-days-container');
+            scheduleBody = document.getElementById('schedule-body');
+            loader = document.getElementById('loader');
+            loaderText = document.getElementById('loader-text');
+            lockBtn = document.getElementById('lock-store-btn');
+            lockIcon = document.getElementById('lock-icon');
+            modal = document.getElementById('appointment-modal'); // [重要] 確保 modal 被正確抓取
+            dailyNoteInput = document.getElementById('daily-note');
+            isFullCheckbox = document.getElementById('is-full-checkbox');
+
             initDatePickers();
             try {
                 await fetchStoreData();
@@ -356,7 +382,7 @@
                 console.error('Init Error:', e);
                 Swal.fire('系統錯誤', '無法載入初始資料，請重新整理網頁', 'error');
             } finally {
-                toggleLoader(false); // [重要] 確保強制關閉 Loader
+                toggleLoader(false); 
             }
             
             storeSelect.addEventListener('change', handleStoreChange);
@@ -379,7 +405,6 @@
                 options.headers = { 'Content-Type': 'text/plain;charset=utf-8' };
             }
             
-            // 15秒超時設定
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 15000);
             options.signal = controller.signal;
@@ -422,7 +447,7 @@
                     storeSelect.value = targetStoreId;
                     await handleStoreChange();
                 } else {
-                    toggleLoader(false); // [重要] 如果沒自動選分店，要關閉 Loader
+                    toggleLoader(false);
                 }
             } catch (e) {
                 console.error(e);
@@ -589,6 +614,9 @@
             const deleteIdsField = document.getElementById('delete-row-ids');
             const petsContainer = document.getElementById('pets-container');
             
+            // [安全修正] 檢查 modal 是否存在
+            if (!modal) modal = document.getElementById('appointment-modal');
+
             dateField.value = formatDate(currentDate);
             phoneField.value = '';
             isAppField.checked = false;
@@ -613,6 +641,7 @@
         }
 
         function closeAppointmentModal() {
+            if (!modal) modal = document.getElementById('appointment-modal');
             modal.classList.add('hidden');
         }
         
