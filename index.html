@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>美容預約系統</title>
+    <title>美容預約系統 (日程表版)</title>
     <!-- 載入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 載入 Font Awesome 圖示 -->
+    <!-- 載入 Font Awesome 圖示 (新增了 fa-dog, fa-cat 等圖示支援) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- 載入 flatpickr (日期選擇器) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -225,8 +225,8 @@
         <!-- 統計數據 -->
         <div class="bg-white border-t border-gray-100 px-4 py-2 flex justify-start items-center gap-3 text-xs font-medium text-gray-600 overflow-x-auto">
              <span class="px-2 py-0.5 bg-gray-50 text-gray-700 rounded-full border border-gray-200">總筆數: <span id="stat-total">0</span></span>
-             <span class="px-2 py-0.5 bg-green-50 text-green-700 rounded-full border border-green-100">洗澡: <span id="stat-bath">0</span></span>
              <span class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full border border-blue-100">美容: <span id="stat-beauty">0</span></span>
+             <span class="px-2 py-0.5 bg-green-50 text-green-700 rounded-full border border-green-100">洗澡: <span id="stat-bath">0</span></span>
              <span class="px-2 py-0.5 bg-yellow-50 text-yellow-700 rounded-full border border-yellow-100">單項: <span id="stat-single">0</span></span>
         </div>
     </header>
@@ -565,12 +565,31 @@
                             const chip = document.createElement('div');
                             const serviceClass = getServiceColorClass(pet.service);
                             chip.className = `appt-chip ${serviceClass}`;
+                            
+                            // [新增] 判斷並加入物種圖示 (Icon)
+                            let icon = ''; // 預設無
+                            if (pet.species === '狗') icon = '<i class="fa-solid fa-dog text-lg text-gray-500 mr-1"></i>';
+                            else if (pet.species === '貓') icon = '<i class="fa-solid fa-cat text-lg text-gray-500 mr-1"></i>';
+                            else if (pet.species === '兔子') icon = '<span class="text-lg mr-1">🐰</span>';
+
                             const line1 = [pet.species, pet.breed, pet.name, pet.service].filter(v => v && v !== '未填').join(' ');
                             let phoneDisplay = app.phone || '';
                             if (phoneDisplay.length === 9 && phoneDisplay.startsWith('9')) phoneDisplay = '0' + phoneDisplay;
                             const line2 = [phoneDisplay, pet.note].filter(v => v && v !== '未填').join(' ');
                             const appBadge = app.isApp ? '<i class="fa-solid fa-mobile-screen ml-1 text-xs"></i>' : '';
-                            chip.innerHTML = `<div class="font-bold text-sm w-full flex justify-between"><span>${line1 || '無資料'}</span><span>${appBadge}</span></div><div class="text-xs opacity-90 mt-1 break-all">${line2}</div>`;
+                            
+                            // [修改] 插入圖示到 HTML
+                            chip.innerHTML = `
+                                <div class="font-bold text-sm w-full flex justify-between items-center">
+                                    <div class="flex items-center">
+                                        ${icon}
+                                        <span>${line1 || '無資料'}</span>
+                                    </div>
+                                    <span>${appBadge}</span>
+                                </div>
+                                <div class="text-xs opacity-90 mt-1 break-all pl-6">${line2}</div>
+                            `;
+                            
                             chip.onclick = (e) => { e.stopPropagation(); openAppointmentModal(app); };
                             groupDiv.appendChild(chip);
                         });
