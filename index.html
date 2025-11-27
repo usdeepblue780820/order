@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>美容預約系統 (日程表版)</title>
+    <title>美容預約系統</title>
     <!-- 載入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 載入 Font Awesome 圖示 -->
@@ -174,7 +174,7 @@
                     </div>
                 </div>
 
-                <!-- [新增] 支持區塊 (頭像+IG連結) -->
+                <!-- 支持區塊 (頭像+IG連結) -->
                 <div class="hidden md:flex items-center gap-3 px-3 py-1.5 bg-gray-50 rounded-full border border-gray-100">
                     <!-- 4張頭像 (圓形重疊) -->
                     <div class="flex -space-x-2">
@@ -223,10 +223,10 @@
             </div>
         </div>
         <!-- 統計數據 -->
-        <div class="bg-white border-t border-gray-100 px-4 py-1 flex justify-end items-center gap-3 text-xs font-medium text-gray-600">
+        <div class="bg-white border-t border-gray-100 px-4 py-2 flex justify-start items-center gap-3 text-xs font-medium text-gray-600 overflow-x-auto">
              <span class="px-2 py-0.5 bg-gray-50 text-gray-700 rounded-full border border-gray-200">總筆數: <span id="stat-total">0</span></span>
-             <span class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full border border-blue-100">美容: <span id="stat-beauty">0</span></span>
              <span class="px-2 py-0.5 bg-green-50 text-green-700 rounded-full border border-green-100">洗澡: <span id="stat-bath">0</span></span>
+             <span class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full border border-blue-100">美容: <span id="stat-beauty">0</span></span>
              <span class="px-2 py-0.5 bg-yellow-50 text-yellow-700 rounded-full border border-yellow-100">單項: <span id="stat-single">0</span></span>
         </div>
     </header>
@@ -257,7 +257,7 @@
                 </div>
             </div>
 
-            <!-- 讀取遮罩 -->
+            <!-- 讀取遮罩 (修正版) -->
             <div id="loader" class="loader-overlay absolute inset-0 z-30 flex flex-col items-center justify-center hidden">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-3"></div>
                 <p class="text-gray-600 font-medium" id="loader-text">資料同步中...</p>
@@ -657,7 +657,11 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2 mb-2">
                     <select class="pet-species w-full rounded border-gray-300 text-sm p-1.5 border"><option value="狗">🐶 狗</option><option value="貓">🐱 貓</option><option value="兔子">🐰 兔子</option></select>
-                    <select class="pet-service w-full rounded border-gray-300 text-sm p-1.5 border"><option value="美容">✂️ 美容</option><option value="洗澡">🚿 洗澡</option><option value="單項">💅 單項</option></select>
+                    <select class="pet-service w-full rounded border-gray-300 text-sm p-1.5 border">
+                        <option value="洗澡">🚿 洗澡</option>
+                        <option value="美容">✂️ 美容</option>
+                        <option value="單項">💅 單項</option>
+                    </select>
                 </div>
                 <div class="grid grid-cols-2 gap-2 mb-2">
                     <input type="text" class="pet-breed w-full rounded border-gray-300 text-sm p-1.5 border" placeholder="品種" oninput="checkPetNotes(this)">
@@ -669,7 +673,7 @@
             container.appendChild(div);
             if (data) {
                 div.querySelector('.pet-species').value = data.species || '狗';
-                div.querySelector('.pet-service').value = data.service || '美容';
+                div.querySelector('.pet-service').value = data.service || '洗澡';
                 div.querySelector('.pet-breed').value = data.breed || '';
                 div.querySelector('.pet-name').value = data.name || '';
                 div.querySelector('.pet-notes').value = data.note || '';
