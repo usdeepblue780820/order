@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>美容預約系統</title>
+    <title>美容預約系統 (日程表版)</title>
     <!-- 載入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 載入 Font Awesome 圖示 (新增了 fa-dog, fa-cat 等圖示支援) -->
+    <!-- 載入 Font Awesome 圖示 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- 載入 flatpickr (日期選擇器) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -573,8 +573,18 @@
                             else if (pet.species === '兔子') icon = '<span class="text-lg mr-1">🐰</span>';
 
                             const line1 = [pet.species, pet.breed, pet.name, pet.service].filter(v => v && v !== '未填').join(' ');
-                            let phoneDisplay = app.phone || '';
-                            if (phoneDisplay.length === 9 && phoneDisplay.startsWith('9')) phoneDisplay = '0' + phoneDisplay;
+                            
+                            // [修正] 電話號碼處理邏輯: 顯示原始號碼，僅針對手機自動補0
+                            let phoneDisplay = (app.phone || '').toString();
+                            // 若是 9 碼且 9 開頭的手機號 (09xxxxxxxx -> 9xxxxxxxx)，自動補 0
+                            if (phoneDisplay.length === 9 && phoneDisplay.startsWith('9')) {
+                                phoneDisplay = '0' + phoneDisplay;
+                            }
+                            // [修正] 若是 8 碼 (03xxxxxxx -> 3xxxxxxx)，自動補 0 (針對市話)
+                            if (phoneDisplay.length === 8) {
+                                phoneDisplay = '0' + phoneDisplay;
+                            }
+
                             const line2 = [phoneDisplay, pet.note].filter(v => v && v !== '未填').join(' ');
                             const appBadge = app.isApp ? '<i class="fa-solid fa-mobile-screen ml-1 text-xs"></i>' : '';
                             
@@ -676,6 +686,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2 mb-2">
                     <select class="pet-species w-full rounded border-gray-300 text-sm p-1.5 border"><option value="狗">🐶 狗</option><option value="貓">🐱 貓</option><option value="兔子">🐰 兔子</option></select>
+                    <!-- [修改] 調整選項順序: 洗澡, 美容, 單項 -->
                     <select class="pet-service w-full rounded border-gray-300 text-sm p-1.5 border">
                         <option value="洗澡">🚿 洗澡</option>
                         <option value="美容">✂️ 美容</option>
@@ -851,12 +862,24 @@
             const breed = container.querySelector('.pet-breed').value.trim().toLowerCase();
             const name = container.querySelector('.pet-name').value.trim().toLowerCase();
             const noteDisplay = container.querySelector('.pet-auto-note');
+            // [新增] 取得該卡片的備註欄位
+            const noteInput = container.querySelector('.pet-notes');
+
             if (!breed && !name) { noteDisplay.classList.add('hidden'); return; }
+            
             const found = allPetProfiles.find(p => (p.breed || '').toLowerCase() === breed && (p.name || '').toLowerCase() === name);
+            
             if (found) {
                 noteDisplay.innerHTML = `<strong><i class="fa-solid fa-circle-exclamation"></i> 注意：</strong> ${found.notes}`;
                 noteDisplay.classList.remove('hidden');
-            } else { noteDisplay.classList.add('hidden'); }
+                
+                // [新增] 若備註欄是空的，自動填入注意事項
+                if(noteInput && !noteInput.value.trim()) {
+                    noteInput.value = found.notes;
+                }
+            } else { 
+                noteDisplay.classList.add('hidden'); 
+            }
         }
 
         function updateStats() {
@@ -1037,4 +1060,3 @@
     </script>
 </body>
 </html>
-
