@@ -73,6 +73,13 @@
             background-color: #eff6ff; /* 淺藍色 hover */
         }
         
+        /* [新增] 該時段不接客的儲存格樣式 */
+        .content-cell-blocked {
+            background-color: #e5e7eb !important; /* 深灰色 */
+            cursor: not-allowed; /* 禁止符號 */
+            opacity: 0.8;
+        }
+        
         /* 預約群組樣式 */
         .appt-group {
             border-left: 4px solid #cbd5e1;
@@ -109,6 +116,8 @@
         .bg-beauty { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
         .bg-bath { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
         .bg-single { background-color: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+        /* [新增] 暫不接客的卡片樣式 */
+        .bg-blocked { background-color: #9ca3af; color: #ffffff; border: 1px solid #6b7280; } 
         
         /* Modal 動畫 */
         .modal {
@@ -257,7 +266,7 @@
                 </div>
             </div>
 
-            <!-- 讀取遮罩 (修正版) -->
+            <!-- 讀取遮罩 -->
             <div id="loader" class="loader-overlay absolute inset-0 z-30 flex flex-col items-center justify-center hidden">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-3"></div>
                 <p class="text-gray-600 font-medium" id="loader-text">資料同步中...</p>
@@ -338,7 +347,13 @@
     </button>
 
     <!-- Modals -->
-    <div id="appointment-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true"><div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"><div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeAppointmentModal()"></div><span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span><div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full"><div class="bg-gray-50 px-4 py-3 border-b flex justify-between items-center"><h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title"><i class="fa-regular fa-calendar-plus mr-2"></i><span id="appt-modal-title">新增預約</span></h3><button onclick="closeAppointmentModal()" class="text-gray-400 hover:text-gray-500"><i class="fa-solid fa-xmark text-xl"></i></button></div><div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[70vh] overflow-y-auto"><form id="appointment-form" class="space-y-4"><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium text-gray-700">日期</label><input type="text" id="appt-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 cursor-not-allowed" readonly></div><div><label class="block text-sm font-medium text-gray-700">時間</label><select id="appt-time" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"></select></div></div><div class="grid grid-cols-3 gap-4"><div class="col-span-2"><label class="block text-sm font-medium text-gray-700">電話號碼</label><input type="tel" id="appt-phone" placeholder="0912345678" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 border"></div><div class="flex items-center pt-6"><label class="inline-flex items-center"><input type="checkbox" id="appt-is-app" class="form-checkbox h-5 w-5 text-blue-600 rounded"><span class="ml-2 text-gray-700 text-sm">APP預約</span></label></div></div><hr class="border-gray-200"><div id="pets-container" class="space-y-4"></div><button type="button" onclick="addPetField()" class="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-500 hover:text-blue-500 text-sm font-medium transition"><i class="fa-solid fa-plus mr-1"></i> 新增第二隻寵物</button><input type="hidden" id="delete-row-ids"></form></div><div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2"><button type="button" onclick="submitAppointment()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">儲存預約</button><button type="button" id="btn-delete-appt" onclick="deleteCurrentAppointment()" class="hidden w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">刪除此預約</button><button type="button" onclick="closeAppointmentModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button></div></div></div></div>
+    <div id="appointment-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true"><div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"><div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeAppointmentModal()"></div><span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span><div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full"><div class="bg-gray-50 px-4 py-3 border-b flex justify-between items-center"><h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title"><i class="fa-regular fa-calendar-plus mr-2"></i><span id="appt-modal-title">新增預約</span></h3><button onclick="closeAppointmentModal()" class="text-gray-400 hover:text-gray-500"><i class="fa-solid fa-xmark text-xl"></i></button></div><div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[70vh] overflow-y-auto"><form id="appointment-form" class="space-y-4"><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium text-gray-700">日期</label><input type="text" id="appt-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 cursor-not-allowed" readonly></div><div><label class="block text-sm font-medium text-gray-700">時間</label><select id="appt-time" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"></select></div></div><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div class="col-span-2"><label class="block text-sm font-medium text-gray-700">電話號碼</label><input type="tel" id="appt-phone" placeholder="0912345678" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 border"></div><div class="flex items-center pt-6"><label class="inline-flex items-center"><input type="checkbox" id="appt-is-app" class="form-checkbox h-5 w-5 text-blue-600 rounded"><span class="ml-2 text-gray-700 text-sm">APP預約</span></label></div></div>
+    <!-- [新增] 該時段暫時不接 勾選 -->
+    <div class="flex items-center">
+        <input type="checkbox" id="is-blocked" class="form-checkbox h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500 mr-2">
+        <label for="is-blocked" class="text-sm font-bold text-red-600 cursor-pointer">⛔ 該時段暫時不接 (鎖定)</label>
+    </div>
+    <hr class="border-gray-200"><div id="pets-container" class="space-y-4"></div><button type="button" onclick="addPetField()" class="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-500 hover:text-blue-500 text-sm font-medium transition"><i class="fa-solid fa-plus mr-1"></i> 新增第二隻寵物</button><input type="hidden" id="delete-row-ids"></form></div><div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2"><button type="button" onclick="submitAppointment()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">儲存預約</button><button type="button" id="btn-delete-appt" onclick="deleteCurrentAppointment()" class="hidden w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">刪除此預約</button><button type="button" onclick="closeAppointmentModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button></div></div></div></div>
     <div id="profile-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"><div class="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold" id="profile-modal-title">新增注意事項</h3><button onclick="document.getElementById('profile-modal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-xmark text-xl"></i></button></div><div class="bg-gray-50 p-4 rounded mb-4"><form id="profile-form" class="space-y-3"><input type="hidden" name="id" id="profile-id"><div class="grid grid-cols-2 gap-3"><div><label class="block text-sm font-medium text-gray-700 mb-1">品種</label><input type="text" name="breed" id="profile-breed" placeholder="如:貴賓" class="w-full border p-2 rounded text-sm focus:ring-blue-500 focus:border-blue-500"></div><div><label class="block text-sm font-medium text-gray-700 mb-1">寵物名</label><input type="text" name="name" id="profile-name" placeholder="如:寶寶" class="w-full border p-2 rounded text-sm focus:ring-blue-500 focus:border-blue-500"></div></div><div><label class="block text-sm font-medium text-gray-700 mb-1">注意事項內容</label><textarea name="notes" id="profile-notes" placeholder="例如：會咬人、怕吹風機..." class="w-full border p-2 rounded text-sm focus:ring-blue-500 focus:border-blue-500" rows="3"></textarea></div><div class="flex gap-2 pt-2"><button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition font-medium">儲存</button><button type="button" onclick="document.getElementById('profile-modal').classList.add('hidden')" class="px-4 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">取消</button></div></form></div></div></div>
 
     <!-- JS 邏輯 -->
@@ -557,11 +572,33 @@
                 tdContent.className = 'content-cell';
                 
                 const appointments = currentAppointments.filter(app => app.time === time);
+                
+                // 檢查是否有「暫不接」的預約
+                const isBlockedSlot = appointments.some(app => app.services.includes('暫不接'));
+                if (isBlockedSlot) {
+                    tdContent.classList.add('content-cell-blocked');
+                }
+
                 if (appointments.length > 0) {
                     appointments.forEach(app => {
                         const groupDiv = document.createElement('div');
                         groupDiv.className = 'appt-group';
+                        
                         app.pets.forEach(pet => {
+                            // [新增] 處理「暫不接」顯示
+                            if (pet.service === '暫不接') {
+                                const chip = document.createElement('div');
+                                chip.className = 'appt-chip bg-blocked'; // 使用深灰色樣式
+                                chip.innerHTML = `
+                                    <div class="font-bold text-sm w-full flex justify-between items-center">
+                                        <span>⛔ 暫不接客</span>
+                                    </div>
+                                `;
+                                chip.onclick = (e) => { e.stopPropagation(); openAppointmentModal(app); }; // 仍可點擊刪除
+                                groupDiv.appendChild(chip);
+                                return;
+                            }
+
                             const chip = document.createElement('div');
                             const serviceClass = getServiceColorClass(pet.service);
                             chip.className = `appt-chip ${serviceClass}`;
@@ -574,13 +611,11 @@
 
                             const line1 = [pet.species, pet.breed, pet.name, pet.service].filter(v => v && v !== '未填').join(' ');
                             
-                            // [修正] 電話號碼處理邏輯: 顯示原始號碼，僅針對手機自動補0
+                            // [修正] 電話號碼處理邏輯
                             let phoneDisplay = (app.phone || '').toString();
-                            // 若是 9 碼且 9 開頭的手機號 (09xxxxxxxx -> 9xxxxxxxx)，自動補 0
                             if (phoneDisplay.length === 9 && phoneDisplay.startsWith('9')) {
                                 phoneDisplay = '0' + phoneDisplay;
                             }
-                            // [修正] 若是 8 碼 (03xxxxxxx -> 3xxxxxxx)，自動補 0 (針對市話)
                             if (phoneDisplay.length === 8) {
                                 phoneDisplay = '0' + phoneDisplay;
                             }
@@ -605,8 +640,12 @@
                         });
                         tdContent.appendChild(groupDiv);
                     });
+                    
                     tdContent.onclick = (e) => {
                         if (isCurrentDateFull) { Swal.fire('無法新增', '本日美容預約已滿', 'warning'); return; }
+                        // [新增] 如果該時段已鎖定，禁止新增
+                        if (isBlockedSlot) { return; }
+                        
                         if(e.target === tdContent || e.target.classList.contains('appt-group')) openAppointmentModal(null, time);
                     };
                 } else {
@@ -625,7 +664,11 @@
             rawData.forEach((item, idx) => {
                 const time = formatTime(item['時間']);
                 const phone = item['連絡電話'];
-                const key = phone ? `${time}_${phone}` : `${time}_raw_${idx}`;
+                // [修正] 讓暫不接客的項目也能正確分組 (通常電話會是 undefined)
+                const key = (phone !== '未填' && phone !== '' && phone !== undefined)
+                    ? `${time}-${phone}` 
+                    : `${time}-NO-PHONE-${idx}`;
+
                 if (!groups[key]) groups[key] = { key: key, time: time, phone: phone, isApp: item['APP預約'] === 'Y', pets: [], services: [], notes: [], rowIDs: [] };
                 groups[key].pets.push({ breed: item['品種'], name: item['寵物名'], species: item['種類'], service: item['服務內容'], note: item['備註'] });
                 groups[key].services.push(item['服務內容']); groups[key].notes.push(item['備註']); groups[key].rowIDs.push(item.rowID);
@@ -642,6 +685,7 @@
             const deleteBtn = document.getElementById('btn-delete-appt');
             const deleteIdsField = document.getElementById('delete-row-ids');
             const petsContainer = document.getElementById('pets-container');
+            const isBlockedCheckbox = document.getElementById('is-blocked'); // [新增]
             
             // [安全修正] 檢查 modal 是否存在
             if (!modal) modal = document.getElementById('appointment-modal');
@@ -649,6 +693,7 @@
             dateField.value = formatDate(currentDate);
             phoneField.value = '';
             isAppField.checked = false;
+            isBlockedCheckbox.checked = false; // [新增] 重置
             deleteIdsField.value = '';
             petsContainer.innerHTML = '';
             
@@ -659,7 +704,15 @@
                 isAppField.checked = existingAppt.isApp;
                 deleteBtn.classList.remove('hidden');
                 deleteIdsField.value = JSON.stringify(existingAppt.rowIDs);
-                existingAppt.pets.forEach((pet) => { addPetField(pet); });
+                
+                // [新增] 檢查是否為「暫不接」
+                if (existingAppt.services.includes('暫不接')) {
+                    isBlockedCheckbox.checked = true;
+                }
+                
+                existingAppt.pets.forEach((pet) => { 
+                    if(pet.service !== '暫不接') addPetField(pet); 
+                });
             } else {
                 modalTitle.innerText = "新增預約";
                 timeField.value = timeSlot || generateTimeSlots()[0];
@@ -717,19 +770,33 @@
             const phone = document.getElementById('appt-phone').value;
             const isApp = document.getElementById('appt-is-app').checked;
             const deleteRowIds = document.getElementById('delete-row-ids').value;
-            const pets = [];
-            document.querySelectorAll('.pet-entry').forEach(div => {
-                const breed = div.querySelector('.pet-breed').value.trim();
-                const name = div.querySelector('.pet-name').value.trim();
-                const service = div.querySelector('.pet-service').value;
-                if (breed || name || service) {
-                    pets.push({
-                        species: div.querySelector('.pet-species').value,
-                        breed: breed, petName: name, service: service,
-                        notes: div.querySelector('.pet-notes').value
-                    });
-                }
-            });
+            const isBlocked = document.getElementById('is-blocked').checked; // [新增]
+            
+            let pets = [];
+            
+            // [新增] 如果勾選「暫不接」，則忽略寵物欄位，直接建立一筆封鎖資料
+            if (isBlocked) {
+                pets.push({
+                    species: '',
+                    breed: '',
+                    petName: '此時段不接',
+                    service: '暫不接',
+                    notes: ''
+                });
+            } else {
+                document.querySelectorAll('.pet-entry').forEach(div => {
+                    const breed = div.querySelector('.pet-breed').value.trim();
+                    const name = div.querySelector('.pet-name').value.trim();
+                    const service = div.querySelector('.pet-service').value;
+                    if (breed || name || service) {
+                        pets.push({
+                            species: div.querySelector('.pet-species').value,
+                            breed: breed, petName: name, service: service,
+                            notes: div.querySelector('.pet-notes').value
+                        });
+                    }
+                });
+            }
 
             if (pets.length === 0) return Swal.fire('提示', '請至少填寫一隻寵物資料', 'warning');
 
@@ -892,6 +959,9 @@
             let beauty = 0, bath = 0, single = 0, total = 0;
             currentAppointments.forEach(group => {
                 group.services.forEach(s => { 
+                    // [修正] 不計算「暫不接」
+                    if (s === '暫不接') return;
+                    
                     total++; 
                     if (s === '美容') beauty++; else if (s === '洗澡') bath++; else if (s === '單項') single++; 
                 });
