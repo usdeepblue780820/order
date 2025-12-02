@@ -266,7 +266,7 @@
                 </div>
             </div>
 
-            <!-- 讀取遮罩 -->
+            <!-- 讀取遮罩 (修正版) -->
             <div id="loader" class="loader-overlay absolute inset-0 z-30 flex flex-col items-center justify-center hidden">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-3"></div>
                 <p class="text-gray-600 font-medium" id="loader-text">資料同步中...</p>
@@ -372,6 +372,8 @@
         let storeConfig = { start: "09:00", end: "21:00", unit: 60 };
         let isCurrentDateFull = false;
         let scheduleCache = {};
+        // [新增] 用於儲存已滿日期的快取 (YYYY-MM-DD: true/false)
+        let fullDatesCache = {}; 
 
         // DOM 元素變數宣告
         let storeSelect, navDatePickerInput, businessDaysContainer, scheduleBody, loader, loaderText, lockBtn, lockIcon, modal, dailyNoteInput, isFullCheckbox;
@@ -481,6 +483,7 @@
             }
             
             scheduleCache = {}; 
+            fullDatesCache = {}; // [新增] 切換分店清空已滿日期快取
             generateTimeSlotsOption();
             
             toggleLoader(true, '載入店鋪資料...');
@@ -512,6 +515,8 @@
             if (!currentStoreId) return;
             const dateStr = formatDate(currentDate);
             document.getElementById('day-off-banner').classList.add('hidden');
+            
+            // [修改] 先渲染按鈕，但不包含已滿狀態 (稍後更新)
             renderBusinessDayButtons(); 
 
             if (scheduleCache[dateStr]) {
@@ -519,7 +524,8 @@
                 currentAppointments = cached.appts;
                 processDailyNote(cached.note || ''); 
                 checkDayOffAndRender(dateStr);
-                renderBusinessDayButtons(); 
+                // [修改] 更新按鈕的已滿狀態
+                updateBusinessDayButtonFullStatus(dateStr, isCurrentDateFull);
                 if(handleLoading) toggleLoader(false);
                 return; 
             }
@@ -532,9 +538,15 @@
                 ]);
                 currentAppointments = groupAppointments(appts);
                 processDailyNote(note || '');
+                
                 scheduleCache[dateStr] = { appts: currentAppointments, note: note || '' };
+                // [新增] 快取已滿狀態
+                fullDatesCache[dateStr] = isCurrentDateFull;
+
                 checkDayOffAndRender(dateStr);
-                renderBusinessDayButtons();
+                // [修改] 更新按鈕的已滿狀態
+                updateBusinessDayButtonFullStatus(dateStr, isCurrentDateFull);
+
             } catch (e) {
                 console.error(e);
                 if(handleLoading) Swal.fire('讀取失敗', '無法取得預約資料，請稍後再試', 'error');
@@ -585,16 +597,16 @@
                         groupDiv.className = 'appt-group';
                         
                         app.pets.forEach(pet => {
-                            // [新增] 處理「暫不接」顯示
+                            // 處理「暫不接」顯示
                             if (pet.service === '暫不接') {
                                 const chip = document.createElement('div');
-                                chip.className = 'appt-chip bg-blocked'; // 使用深灰色樣式
+                                chip.className = 'appt-chip bg-blocked'; 
                                 chip.innerHTML = `
                                     <div class="font-bold text-sm w-full flex justify-between items-center">
                                         <span>⛔ 暫不接客</span>
                                     </div>
                                 `;
-                                chip.onclick = (e) => { e.stopPropagation(); openAppointmentModal(app); }; // 仍可點擊刪除
+                                chip.onclick = (e) => { e.stopPropagation(); openAppointmentModal(app); }; 
                                 groupDiv.appendChild(chip);
                                 return;
                             }
@@ -603,15 +615,13 @@
                             const serviceClass = getServiceColorClass(pet.service);
                             chip.className = `appt-chip ${serviceClass}`;
                             
-                            // [新增] 判斷並加入物種圖示 (Icon)
-                            let icon = ''; // 預設無
+                            let icon = ''; 
                             if (pet.species === '狗') icon = '<i class="fa-solid fa-dog text-lg text-gray-500 mr-1"></i>';
                             else if (pet.species === '貓') icon = '<i class="fa-solid fa-cat text-lg text-gray-500 mr-1"></i>';
                             else if (pet.species === '兔子') icon = '<span class="text-lg mr-1">🐰</span>';
 
                             const line1 = [pet.species, pet.breed, pet.name, pet.service].filter(v => v && v !== '未填').join(' ');
                             
-                            // [修正] 電話號碼處理邏輯
                             let phoneDisplay = (app.phone || '').toString();
                             if (phoneDisplay.length === 9 && phoneDisplay.startsWith('9')) {
                                 phoneDisplay = '0' + phoneDisplay;
@@ -623,7 +633,6 @@
                             const line2 = [phoneDisplay, pet.note].filter(v => v && v !== '未填').join(' ');
                             const appBadge = app.isApp ? '<i class="fa-solid fa-mobile-screen ml-1 text-xs"></i>' : '';
                             
-                            // [修改] 插入圖示到 HTML
                             chip.innerHTML = `
                                 <div class="font-bold text-sm w-full flex justify-between items-center">
                                     <div class="flex items-center">
@@ -643,9 +652,7 @@
                     
                     tdContent.onclick = (e) => {
                         if (isCurrentDateFull) { Swal.fire('無法新增', '本日美容預約已滿', 'warning'); return; }
-                        // [新增] 如果該時段已鎖定，禁止新增
                         if (isBlockedSlot) { return; }
-                        
                         if(e.target === tdContent || e.target.classList.contains('appt-group')) openAppointmentModal(null, time);
                     };
                 } else {
@@ -664,7 +671,6 @@
             rawData.forEach((item, idx) => {
                 const time = formatTime(item['時間']);
                 const phone = item['連絡電話'];
-                // [修正] 讓暫不接客的項目也能正確分組 (通常電話會是 undefined)
                 const key = (phone !== '未填' && phone !== '' && phone !== undefined)
                     ? `${time}-${phone}` 
                     : `${time}-NO-PHONE-${idx}`;
@@ -687,7 +693,6 @@
             const petsContainer = document.getElementById('pets-container');
             const isBlockedCheckbox = document.getElementById('is-blocked'); // [新增]
             
-            // [安全修正] 檢查 modal 是否存在
             if (!modal) modal = document.getElementById('appointment-modal');
 
             dateField.value = formatDate(currentDate);
@@ -739,7 +744,6 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2 mb-2">
                     <select class="pet-species w-full rounded border-gray-300 text-sm p-1.5 border"><option value="狗">🐶 狗</option><option value="貓">🐱 貓</option><option value="兔子">🐰 兔子</option></select>
-                    <!-- [修改] 調整選項順序: 洗澡, 美容, 單項 -->
                     <select class="pet-service w-full rounded border-gray-300 text-sm p-1.5 border">
                         <option value="洗澡">🚿 洗澡</option>
                         <option value="美容">✂️ 美容</option>
@@ -774,7 +778,6 @@
             
             let pets = [];
             
-            // [新增] 如果勾選「暫不接」，則忽略寵物欄位，直接建立一筆封鎖資料
             if (isBlocked) {
                 pets.push({
                     species: '',
@@ -980,20 +983,43 @@
         
         function handleIsFullChange() {
             const isChecked = isFullCheckbox.checked;
+            const dateStr = formatDate(currentDate);
+            
             let currentNote = dailyNoteInput.value;
-            if (currentNote.startsWith('[FULL]')) currentNote = currentNote.substring(6); 
+            if (currentNote.startsWith('[FULL]')) {
+                currentNote = currentNote.substring(6); 
+            }
+            
             const newNote = isChecked ? `[FULL]${currentNote}` : currentNote;
-            isCurrentDateFull = isChecked; dailyNoteInput.value = currentNote; 
-            saveDailyNote(newNote); renderTable(); renderBusinessDayButtons();
+            
+            isCurrentDateFull = isChecked;
+            dailyNoteInput.value = currentNote; // 輸入框只顯示純文字
+            
+            // [新增] 更新快取，確保下次切換回來時狀態正確
+            fullDatesCache[dateStr] = isChecked;
+            
+            // 立即儲存並刷新畫面
+            saveDailyNote(newNote); 
+            renderTable(); // 刷新表格背景色
+            renderBusinessDayButtons(); // 刷新按鈕顏色
         }
+
         async function saveDailyNote(noteContent) {
             const dateStr = formatDate(currentDate);
             let notesToSend = noteContent;
+            
             if (typeof notesToSend !== 'string') {
+                // 來自 input change 事件
                 let rawNote = dailyNoteInput.value;
-                notesToSend = isFullCheckbox.checked ? `[FULL]${rawNote}` : rawNote;
+                if (isFullCheckbox.checked) {
+                    notesToSend = `[FULL]${rawNote}`;
+                } else {
+                    notesToSend = rawNote;
+                }
             }
+
             if(scheduleCache[dateStr]) scheduleCache[dateStr].note = notesToSend;
+            
             try {
                 await apiCall('saveDailyNote', { date: dateStr, notes: notesToSend }, 'POST');
                 const toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
@@ -1084,13 +1110,36 @@
             const todayStr = formatDate(new Date());
             const viewingStr = formatDate(currentDate);
 
+            // 今天按鈕
             const todayBtn = document.createElement('button');
             const isTodayActive = todayStr === viewingStr;
-            todayBtn.className = `flex-shrink-0 px-4 py-2 rounded-md text-sm font-bold border transition shadow-sm ${isTodayActive ? (isCurrentDateFull ? 'btn-full-active' : 'bg-blue-600 text-white border-blue-600') : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`;
+            
+            // [修改] 判斷是否已滿 (優先使用快取)
+            let isTodayFull = false;
+            if (isTodayActive) {
+                isTodayFull = isCurrentDateFull;
+            } else {
+                isTodayFull = fullDatesCache[todayStr] === true;
+            }
+            
+            // [修改] 判斷按鈕樣式
+            let btnClass = 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
+            if (isTodayActive) {
+                if (isTodayFull) {
+                    btnClass = 'btn-full-active shadow-md'; // 紅色
+                } else {
+                    btnClass = 'bg-blue-600 text-white border-blue-600 shadow-md'; // 藍色
+                }
+            } else if (isTodayFull) { // 如果不是當前日期，但該日已滿
+                 btnClass = 'bg-red-100 text-red-600 border-red-200 hover:bg-red-200'; // 淺紅色
+            }
+
+            todayBtn.className = `flex-shrink-0 px-4 py-2 rounded-md text-sm font-bold border transition shadow-sm ${btnClass}`;
             todayBtn.textContent = '今天';
             todayBtn.onclick = () => { currentDate = new Date(); updateNavDatePicker(); loadSchedule(); };
             container.appendChild(todayBtn);
             
+            // 該月日期
             const year = currentViewMonthDate.getFullYear();
             const month = currentViewMonthDate.getMonth(); 
             const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -1104,11 +1153,26 @@
                 const btn = document.createElement('button');
                 const isActive = dateStr === viewingStr;
                 
-                const btnText = dateObj.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' });
+                // [新增] 判斷該日期是否已滿 (使用快取)
+                // 注意：這裡我們需要一個能快速查詢 "某日是否已滿" 的機制
+                // 目前只有 currentAppointments (當日) 和 fullDatesCache (已讀取過的日子)
+                // 對於沒點進去過的日子，我們無法知道是否已滿，所以只能顯示基本樣式
+                
+                const isFull = (isActive && isCurrentDateFull) || (fullDatesCache[dateStr] === true);
 
-                let activeClass = isActive ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600';
-                if (isActive && isCurrentDateFull) {
-                    activeClass = 'btn-full-active shadow-md';
+                const btnText = dateObj.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' });
+                
+                // [修改] 判斷按鈕樣式
+                let activeClass = 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600';
+                
+                if (isActive) {
+                    if (isFull) {
+                        activeClass = 'btn-full-active shadow-md'; // 紅色
+                    } else {
+                        activeClass = 'bg-blue-600 text-white border-blue-600 shadow-md'; // 藍色
+                    }
+                } else if (isFull) { // 沒選中但已滿
+                    activeClass = 'bg-red-100 text-red-600 border-red-200 hover:bg-red-200'; // 淺紅色
                 }
 
                 btn.className = `flex-shrink-0 px-3 py-2 flex items-center justify-center rounded-md text-sm font-medium border transition shadow-sm ${activeClass}`;
@@ -1121,6 +1185,14 @@
                 };
                 container.appendChild(btn);
             }
+        }
+        
+        // [新增] 更新特定日期的按鈕狀態 (當 loadSchedule 完成後呼叫)
+        function updateBusinessDayButtonFullStatus(dateStr, isFull) {
+            // 只有在該日期確實有按鈕時才更新 (避免更新到不同月份的按鈕)
+            // 但為了簡單起見，我們更新全域快取，然後重繪按鈕列即可
+            fullDatesCache[dateStr] = isFull;
+            renderBusinessDayButtons();
         }
         
         function updateNavDatePicker() {
