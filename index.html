@@ -116,7 +116,7 @@
         .bg-beauty { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
         .bg-bath { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
         .bg-single { background-color: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
-        /* 暫不接客的卡片樣式 */
+        /* [新增] 暫不接客的卡片樣式 */
         .bg-blocked { background-color: #9ca3af; color: #ffffff; border: 1px solid #6b7280; } 
         
         /* Modal 動畫 */
@@ -325,7 +325,7 @@
                     </div>
                 </div>
 
-                <!-- 固定預約區塊 -->
+                <!-- [新增] 固定預約區塊 -->
                 <div class="p-3 bg-white border-t border-gray-100">
                     <div class="flex justify-between items-center mb-2">
                         <h4 class="font-bold text-gray-700">
@@ -361,7 +361,7 @@
 
     <!-- Modals -->
     <div id="appointment-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true"><div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"><div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeAppointmentModal()"></div><span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span><div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full"><div class="bg-gray-50 px-4 py-3 border-b flex justify-between items-center"><h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title"><i class="fa-regular fa-calendar-plus mr-2"></i><span id="appt-modal-title">新增預約</span></h3><button onclick="closeAppointmentModal()" class="text-gray-400 hover:text-gray-500"><i class="fa-solid fa-xmark text-xl"></i></button></div><div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[70vh] overflow-y-auto"><form id="appointment-form" class="space-y-4"><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium text-gray-700">日期</label><input type="text" id="appt-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 cursor-not-allowed" readonly></div><div><label class="block text-sm font-medium text-gray-700">時間</label><select id="appt-time" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"></select></div></div><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div class="col-span-2"><label class="block text-sm font-medium text-gray-700">電話號碼</label><input type="tel" id="appt-phone" placeholder="0912345678" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 border"></div><div class="flex items-center pt-6"><label class="inline-flex items-center"><input type="checkbox" id="appt-is-app" class="form-checkbox h-5 w-5 text-blue-600 rounded"><span class="ml-2 text-gray-700 text-sm">APP預約</span></label></div></div>
-    <!-- 該時段暫時不接 勾選 -->
+    <!-- [新增] 該時段暫時不接 勾選 -->
     <div class="flex items-center">
         <input type="checkbox" id="is-blocked" class="form-checkbox h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500 mr-2">
         <label for="is-blocked" class="text-sm font-bold text-red-600 cursor-pointer">⛔ 該時段暫時不接 (鎖定)</label>
@@ -401,6 +401,7 @@
             <h4 class="text-sm font-bold text-gray-600 mb-2">寵物資料</h4>
             <div class="grid grid-cols-2 gap-2 mb-2">
                 <select id="recur-species" class="w-full border p-2 rounded"><option value="狗">🐶 狗</option><option value="貓">🐱 貓</option><option value="兔子">🐰 兔子</option></select>
+                <!-- [修改] 調整選項順序: 洗澡, 美容, 單項 -->
                 <select id="recur-service" class="w-full border p-2 rounded">
                     <option value="洗澡">🚿 洗澡</option>
                     <option value="美容">✂️ 美容</option>
@@ -490,7 +491,7 @@
             }
             
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000); 
+            const timeoutId = setTimeout(() => controller.abort(), 60000); // [修正] 增加 timeout 到 60000 (60秒)
             options.signal = controller.signal;
 
             try {
@@ -973,6 +974,7 @@
             if (currentNote.startsWith('[FULL]')) currentNote = currentNote.substring(6); 
             const newNote = isChecked ? `[FULL]${currentNote}` : currentNote;
             isCurrentDateFull = isChecked; dailyNoteInput.value = currentNote; 
+            // [新增] 立即更新快取，確保切換回來時狀態正確
             fullDatesCache[dateStr] = isChecked;
             
             saveDailyNote(newNote); renderTable(); renderBusinessDayButtons();
@@ -992,7 +994,7 @@
             } catch (e) { console.error(e); }
         }
         
-        // 顯示固定預約 Modal
+        // [*** 新增 ***] 顯示固定預約 Modal
         function openRecurringModal() {
             const modal = document.getElementById('recurring-modal');
             if (!modal) return;
@@ -1000,7 +1002,7 @@
             // 重置表單
             document.getElementById('recurring-form').reset();
             
-            // 填入時間選項
+            // 填入時間選項 (複製 main form 的 options)
             const mainTimeSelect = document.getElementById('time-select');
             if (mainTimeSelect && recurTimeSelect) {
                 recurTimeSelect.innerHTML = mainTimeSelect.innerHTML;
@@ -1009,7 +1011,7 @@
             modal.classList.remove('hidden');
         }
         
-        // 處理固定預約提交 (批次新增)
+        // [*** 新增 ***] 處理固定預約提交 (批次新增)
         async function handleSaveRecurringAppointment() {
             // 1. 收集表單資料
             const startDate = document.getElementById('recur-start-date').value;
@@ -1018,9 +1020,11 @@
             const phone = document.getElementById('recur-phone').value;
             const isApp = document.getElementById('recur-is-app').checked;
             
+            // 收集星期幾 Checkbox
             const checkboxes = document.querySelectorAll('input[name="recur-day"]:checked');
-            const selectedDays = Array.from(checkboxes).map(cb => parseInt(cb.value));
+            const selectedDays = Array.from(checkboxes).map(cb => parseInt(cb.value)); // [1, 3, 5] etc.
 
+            // 收集寵物資料 (單隻)
             const species = document.getElementById('recur-species').value;
             const service = document.getElementById('recur-service').value;
             const breed = document.getElementById('recur-breed').value;
@@ -1033,10 +1037,15 @@
             if (!time) { return Swal.fire('提示', '請選擇時間', 'warning'); }
             if (!petName && !service) { return Swal.fire('提示', '請填寫寵物資料', 'warning'); }
 
-            // 3. 計算日期列表 (自動避開公休)
+            // 3. 計算日期列表
             const targetDates = [];
             let curr = new Date(startDate);
             const end = new Date(endDate);
+            
+            // [*** 新增 ***] 避開公休日邏輯
+            // 注意：currentDaysOff 只包含已載入的公休日，可能不完整 (如果跨月)。
+            // 若要嚴謹，應重新 fetch 所有相關月份的公休，或假設 currentDaysOff 足夠涵蓋。
+            // 在此簡單實作：比對 currentDaysOff
             
             while (curr <= end) {
                 const dateStr = formatSheetDate(curr);
@@ -1054,12 +1063,14 @@
             if (targetDates.length === 0) { return Swal.fire('提示', '區間內沒有符合的日期 (可能遇到公休日或無符合星期)', 'info'); }
             
             // 4. 執行批次新增
+            // 關閉 Modal
             document.getElementById('recurring-modal').classList.add('hidden');
             toggleLoader(true, `準備建立 ${targetDates.length} 筆預約...`);
 
             let successCount = 0;
             let failCount = 0;
 
+            // 循序執行 (避免同時發送太多請求)
             for (let i = 0; i < targetDates.length; i++) {
                 const dateStr = targetDates[i];
                 toggleLoader(true, `正在建立第 ${i + 1} / ${targetDates.length} 筆... (${dateStr})`);
@@ -1079,7 +1090,10 @@
                 };
 
                 try {
-                    await apiCall('POST', 'addAppointment', payload);
+                    // [*** 修正 ***] apiCall 參數順序修正 (action, payload, method)
+                    await apiCall('addAppointment', payload, 'POST');
+                    
+                    // 清除該日期的快取
                     delete scheduleCache[dateStr];
                     successCount++;
                 } catch (e) {
@@ -1090,12 +1104,14 @@
 
             toggleLoader(false);
             
+            // 5. 結果提示
             if (failCount === 0) {
                 Swal.fire('建立完成', `成功建立 ${successCount} 筆固定預約！`, 'success');
             } else {
                 Swal.fire('建立完成', `成功: ${successCount} 筆，失敗: ${failCount} 筆`, 'warning');
             }
 
+            // 重新載入當前畫面
             loadSchedule();
         }
 
@@ -1103,12 +1119,15 @@
         function generateTimeSlotsOption() { 
             const select = document.getElementById('appt-time'); 
             select.innerHTML = ''; 
+            
+            // 產生選項
             const options = [];
             generateTimeSlots().forEach(time => { 
                 options.push(`<option value="${time}">${time}</option>`);
             });
             select.innerHTML = options.join('');
             
+            // [*** 新增 ***] 同步更新到固定預約的時間選單
             if(recurTimeSelect) {
                 recurTimeSelect.innerHTML = select.innerHTML;
             }
@@ -1118,7 +1137,9 @@
         function getServiceColorClass(serviceName) { if (serviceName === '美容') return 'bg-beauty'; if (serviceName === '洗澡') return 'bg-bath'; if (serviceName === '單項') return 'bg-single'; return 'bg-gray-100 border-gray-200'; }
         function toggleSidebar() { const sidebar = document.getElementById('sidebar'); const overlay = document.getElementById('sidebar-overlay'); if (sidebar.classList.contains('translate-x-full')) { sidebar.classList.remove('translate-x-full'); overlay.classList.remove('hidden'); } else { sidebar.classList.add('translate-x-full'); overlay.classList.add('hidden'); } }
         
+        // 補充缺少的函式
         function initDatePickers() {
+            // [左上角] 快速跳轉日曆 (單選)
             flatpickr("#nav-date-picker", {
                 locale: "zh_tw",
                 dateFormat: "Y-m-d",
@@ -1133,6 +1154,7 @@
                 }
             });
 
+            // [側邊欄] 公休設定日曆 (多選)
             flatpickr("#sidebar-dayoff-picker", {
                 locale: "zh_tw",
                 mode: "multiple",
@@ -1144,6 +1166,7 @@
                 }
             });
 
+            // [*** 新增 ***] 固定預約日期選單
             flatpickr("#recur-start-date", { locale: "zh_tw", dateFormat: "Y-m-d" });
             flatpickr("#recur-end-date", { locale: "zh_tw", dateFormat: "Y-m-d" });
         }
@@ -1154,11 +1177,13 @@
                 const data = await apiCall('getDaysOff');
                 currentDaysOff = data.map(d => formatDate(new Date(d))).filter(d => d);
                 
+                // 更新側邊欄公休設定的選取狀態
                 const fp = document.getElementById('sidebar-dayoff-picker')._flatpickr;
                 if(fp) {
                     fp.setDate(currentDaysOff, false); 
                 }
 
+                // 更新快速跳轉選單 (禁用公休日期)
                 const fpNav = document.getElementById('nav-date-picker')._flatpickr;
                 if(fpNav) fpNav.set('disable', currentDaysOff);
                 
