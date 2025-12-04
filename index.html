@@ -1037,7 +1037,7 @@
             if (!time) { return Swal.fire('提示', '請選擇時間', 'warning'); }
             if (!petName && !service) { return Swal.fire('提示', '請填寫寵物資料', 'warning'); }
 
-            // 3. 計算日期列表
+            // 3. 計算日期列表 (自動避開公休)
             const targetDates = [];
             let curr = new Date(startDate);
             const end = new Date(endDate);
