@@ -848,8 +848,18 @@
                 if (deleteRowIds) await apiCall('deleteAppointments', { rowIDs: JSON.parse(deleteRowIds) }, 'POST');
                 await apiCall('addAppointment', { date, time, phone, isApp, pets }, 'POST');
                 delete scheduleCache[date];
+                
+                // [*** 關鍵修正 ***] 這裡的 Swal.fire 修改了標題
+                const storeName = document.getElementById('current-store-name').innerText;
                 closeAppointmentModal();
-                Swal.fire({ title: '成功', text: '預約已儲存', icon: 'success', timer: 1500, showConfirmButton: false });
+                Swal.fire({ 
+                    title: '成功', 
+                    text: `[${storeName}][${date}]預約已儲存`, 
+                    icon: 'success', 
+                    timer: 1500, 
+                    showConfirmButton: false 
+                });
+                
                 await loadSchedule(false);
             } catch (e) {
                 Swal.fire('錯誤', '儲存失敗：' + e.message, 'error');
