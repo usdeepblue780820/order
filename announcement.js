@@ -47,7 +47,6 @@ const FONT_MAP = {
 
 const FONT_FILES = {
     'QingFeng': '清風手寫體5.ttf',
-    'HuiWen': '芫荽.ttf'
 };
 
 let currentTemplateType = 'regular';
@@ -505,4 +504,5 @@ function downloadAnnouncement() {
     link.download = `${storeName}_${month}月公休表.png`;
     link.href = canvas.toDataURL();
     link.click();
+
 }
