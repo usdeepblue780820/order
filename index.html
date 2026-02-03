@@ -73,7 +73,7 @@
             background-color: #eff6ff; /* 淺藍色 hover */
         }
         
-        /* [新增] 該時段不接客的儲存格樣式 */
+        /* 該時段不接客的儲存格樣式 */
         .content-cell-blocked {
             background-color: #e5e7eb !important; /* 深灰色 */
             cursor: not-allowed; /* 禁止符號 */
@@ -116,7 +116,7 @@
         .bg-beauty { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
         .bg-bath { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
         .bg-single { background-color: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
-        /* [新增] 暫不接客的卡片樣式 */
+        /* 暫不接客的卡片樣式 */
         .bg-blocked { background-color: #9ca3af; color: #ffffff; border: 1px solid #6b7280; } 
         
         /* Modal 動畫 */
@@ -303,9 +303,9 @@
                 </button>
             </div>
             
-            <div class="flex-1 overflow-hidden flex flex-col">
+            <div class="flex-1 overflow-y-auto flex flex-col">
                 <!-- 特別注意事項區塊 -->
-                <div class="flex-1 flex flex-col min-h-0 bg-gray-50">
+                <div class="flex flex-col bg-gray-50 shrink-0">
                     <div class="p-3 bg-white border-b border-gray-200">
                         <div class="flex justify-between items-center mb-2">
                             <h4 class="font-bold text-gray-700">
@@ -317,10 +317,10 @@
                         </div>
                         <div class="relative">
                             <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
-                            <input type="text" id="profile-search" oninput="filterProfileList()" placeholder="搜尋品種或名字..." class="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            <input type="text" id="profile-search" oninput="filterProfileList()" placeholder="搜尋電話、品種或名字..." class="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                         </div>
                     </div>
-                    <div id="profile-list-container" class="flex-1 overflow-y-auto p-2 space-y-2">
+                    <div id="profile-list-container" class="h-[600px] overflow-y-auto p-2 space-y-2 border-b border-gray-200">
                         <div class="text-center text-gray-400 text-sm py-4">讀取中...</div>
                     </div>
                 </div>
@@ -336,6 +336,19 @@
                         </button>
                     </div>
                     <div class="text-xs text-gray-500">批次建立固定時段的預約</div>
+                </div>
+
+                <!-- [新增] 公告生成器區塊 -->
+                <div class="p-3 bg-white border-t border-gray-100">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="font-bold text-gray-700">
+                            <i class="fa-solid fa-bullhorn mr-1"></i>公休公告
+                        </h4>
+                        <button onclick="openAnnouncementModal()" class="text-sm bg-orange-500 text-white px-3 py-1.5 rounded-md hover:bg-orange-600 transition shadow-sm flex items-center">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>生成
+                        </button>
+                    </div>
+                    <div class="text-xs text-gray-500">生成當月公休圖片</div>
                 </div>
 
                 <!-- 公休設定區塊 -->
@@ -360,16 +373,16 @@
     </button>
 
     <!-- Modals -->
-    <div id="appointment-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true"><div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"><div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeAppointmentModal()"></div><span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span><div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full"><div class="bg-gray-50 px-4 py-3 border-b flex justify-between items-center"><h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title"><i class="fa-regular fa-calendar-plus mr-2"></i><span id="appt-modal-title">新增預約</span></h3><button onclick="closeAppointmentModal()" class="text-gray-400 hover:text-gray-500"><i class="fa-solid fa-xmark text-xl"></i></button></div><div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[70vh] overflow-y-auto"><form id="appointment-form" class="space-y-4"><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium text-gray-700">日期</label><input type="text" id="appt-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 cursor-not-allowed" readonly></div><div><label class="block text-sm font-medium text-gray-700">時間</label><select id="appt-time" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"></select></div></div><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div class="col-span-2"><label class="block text-sm font-medium text-gray-700">電話號碼</label><input type="tel" id="appt-phone" placeholder="0912345678" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 border"></div><div class="flex items-center pt-6"><label class="inline-flex items-center"><input type="checkbox" id="appt-is-app" class="form-checkbox h-5 w-5 text-blue-600 rounded"><span class="ml-2 text-gray-700 text-sm">APP預約</span></label></div></div>
-    <!-- [新增] 該時段暫時不接 勾選 -->
+    <div id="appointment-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true"><div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"><div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeAppointmentModal()"></div><span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span><div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full"><div class="bg-gray-50 px-4 py-3 border-b flex justify-between items-center"><h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title"><i class="fa-regular fa-calendar-plus mr-2"></i><span id="appt-modal-title">新增預約</span></h3><button onclick="closeAppointmentModal()" class="text-gray-400 hover:text-gray-500"><i class="fa-solid fa-xmark text-xl"></i></button></div><div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[70vh] overflow-y-auto"><form id="appointment-form" class="space-y-4"><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium text-gray-700">日期</label><input type="text" id="appt-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 cursor-not-allowed" readonly></div><div><label class="block text-sm font-medium text-gray-700">時間</label><select id="appt-time" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"></select></div></div><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div class="col-span-2"><label class="block text-sm font-medium text-gray-700">電話號碼</label><input type="tel" id="appt-phone" placeholder="0912345678" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 border" oninput="triggerAllPetChecks()"></div><div class="flex items-center pt-6"><label class="inline-flex items-center"><input type="checkbox" id="appt-is-app" class="form-checkbox h-5 w-5 text-blue-600 rounded"><span class="ml-2 text-gray-700 text-sm">APP預約</span></label></div></div>
+    <!-- 該時段暫時不接 勾選 -->
     <div class="flex items-center">
         <input type="checkbox" id="is-blocked" class="form-checkbox h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500 mr-2">
         <label for="is-blocked" class="text-sm font-bold text-red-600 cursor-pointer">⛔ 該時段暫時不接 (鎖定)</label>
     </div>
     <hr class="border-gray-200"><div id="pets-container" class="space-y-4"></div><button type="button" onclick="addPetField()" class="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-500 hover:text-blue-500 text-sm font-medium transition"><i class="fa-solid fa-plus mr-1"></i> 新增第二隻寵物</button><input type="hidden" id="delete-row-ids"></form></div><div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2"><button type="button" id="btn-save-appt" onclick="submitAppointment()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">儲存預約</button><button type="button" id="btn-delete-appt" onclick="deleteCurrentAppointment()" class="hidden w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">刪除此預約</button><button type="button" onclick="closeAppointmentModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button></div></div></div></div>
-    <div id="profile-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"><div class="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold" id="profile-modal-title">新增注意事項</h3><button onclick="document.getElementById('profile-modal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-xmark text-xl"></i></button></div><div class="bg-gray-50 p-4 rounded mb-4"><form id="profile-form" class="space-y-3"><input type="hidden" name="id" id="profile-id"><div class="grid grid-cols-2 gap-3"><div><label class="block text-sm font-medium text-gray-700 mb-1">品種</label><input type="text" name="breed" id="profile-breed" placeholder="如:貴賓" class="w-full border p-2 rounded text-sm focus:ring-blue-500 focus:border-blue-500"></div><div><label class="block text-sm font-medium text-gray-700 mb-1">寵物名</label><input type="text" name="name" id="profile-name" placeholder="如:寶寶" class="w-full border p-2 rounded text-sm focus:ring-blue-500 focus:border-blue-500"></div></div><div><label class="block text-sm font-medium text-gray-700 mb-1">注意事項內容</label><textarea name="notes" id="profile-notes" placeholder="例如：會咬人、怕吹風機..." class="w-full border p-2 rounded text-sm focus:ring-blue-500 focus:border-blue-500" rows="3"></textarea></div><div class="flex gap-2 pt-2"><button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition font-medium">儲存</button><button type="button" onclick="document.getElementById('profile-modal').classList.add('hidden')" class="px-4 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">取消</button></div></form></div></div></div>
+    <div id="profile-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"><div class="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold" id="profile-modal-title">新增注意事項</h3><button onclick="document.getElementById('profile-modal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-xmark text-xl"></i></button></div><div class="bg-gray-50 p-4 rounded mb-4"><form id="profile-form" class="space-y-3"><input type="hidden" name="id" id="profile-id"><div class="mb-2"><label class="block text-sm font-medium text-gray-700 mb-1">連絡電話 (選填)</label><input type="tel" name="phone" id="profile-phone" placeholder="0912345678" class="w-full border p-2 rounded text-sm focus:ring-blue-500 focus:border-blue-500"></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-sm font-medium text-gray-700 mb-1">品種</label><input type="text" name="breed" id="profile-breed" placeholder="如:貴賓" class="w-full border p-2 rounded text-sm focus:ring-blue-500 focus:border-blue-500"></div><div><label class="block text-sm font-medium text-gray-700 mb-1">寵物名</label><input type="text" name="name" id="profile-name" placeholder="如:寶寶" class="w-full border p-2 rounded text-sm focus:ring-blue-500 focus:border-blue-500"></div></div><div><label class="block text-sm font-medium text-gray-700 mb-1">注意事項內容</label><textarea name="notes" id="profile-notes" placeholder="例如：會咬人、怕吹風機..." class="w-full border p-2 rounded text-sm focus:ring-blue-500 focus:border-blue-500" rows="3"></textarea></div><div class="flex gap-2 pt-2"><button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition font-medium">儲存</button><button type="button" onclick="document.getElementById('profile-modal').classList.add('hidden')" class="px-4 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">取消</button></div></form></div></div></div>
 
-    <!-- [*** 新增 ***] 固定預約 Modal -->
+    <!-- 固定預約 Modal -->
     <div id="recurring-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"><div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-purple-700"><i class="fa-solid fa-repeat mr-2"></i>新增固定預約 (批次)</h3><button onclick="document.getElementById('recurring-modal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-xmark text-xl"></i></button></div><div class="bg-purple-50 p-4 rounded mb-4 border border-purple-100"><form id="recurring-form" class="space-y-4">
         <!-- 日期區間與時間 -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -401,7 +414,7 @@
             <h4 class="text-sm font-bold text-gray-600 mb-2">寵物資料</h4>
             <div class="grid grid-cols-2 gap-2 mb-2">
                 <select id="recur-species" class="w-full border p-2 rounded"><option value="狗">🐶 狗</option><option value="貓">🐱 貓</option><option value="兔子">🐰 兔子</option></select>
-                <!-- [修改] 調整選項順序: 洗澡, 美容, 單項 -->
+                <!-- 調整選項順序: 洗澡, 美容, 單項 -->
                 <select id="recur-service" class="w-full border p-2 rounded">
                     <option value="洗澡">🚿 洗澡</option>
                     <option value="美容">✂️ 美容</option>
@@ -420,7 +433,93 @@
         </div>
     </form></div></div></div></div>
 
+    <!-- [修改] 公告生成器 Modal - 手機友善版 (RWD) -->
+    <div id="announcement-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+        <!-- 容器：從 w-full 改為 max-w-6xl，並設定 flex-col (手機) / flex-row (電腦) -->
+        <div class="relative w-full max-w-6xl rounded-lg shadow-2xl flex flex-col md:flex-row bg-white overflow-hidden max-h-[90vh] md:max-h-[90vh]">
+            
+            <!-- 關閉按鈕：固定在右上角，加大點擊區域 -->
+            <button onclick="document.getElementById('announcement-modal').classList.add('hidden')" 
+                    class="absolute top-2 right-2 z-50 text-gray-500 hover:text-gray-800 bg-white/90 rounded-full p-3 hover:bg-white transition shadow-md border border-gray-100">
+                <i class="fa-solid fa-xmark text-2xl"></i>
+            </button>
+
+            <!-- 左側設定區 (電腦版左側，手機版上方) -->
+            <div class="w-full md:w-1/3 bg-gray-50 p-5 border-b md:border-b-0 md:border-r border-gray-200 overflow-y-auto max-h-[40vh] md:max-h-full">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">公休公告設定</h3>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- 模板選擇 -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">選擇風格</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="setAnnouncementTemplate('regular')" class="p-3 border-2 border-blue-100 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-center group focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <div class="w-full h-12 bg-gradient-to-b from-blue-50 to-blue-100 rounded mb-2 group-hover:shadow-sm"></div>
+                                <span class="text-sm font-medium text-gray-700">常規版</span>
+                            </button>
+                            <button onclick="setAnnouncementTemplate('newyear')" class="p-3 border-2 border-red-100 rounded-lg hover:border-red-500 hover:bg-red-50 transition text-center group focus:outline-none focus:ring-2 focus:ring-red-500">
+                                <div class="w-full h-12 bg-gradient-to-b from-red-700 to-red-500 rounded mb-2 group-hover:shadow-sm"></div>
+                                <span class="text-sm font-medium text-gray-700">新年版</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- [修正] 字型選擇 (移除多餘選項，只留兩個) -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">選擇字型</label>
+                        <select id="announce-font-select" class="w-full border p-2 rounded text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <option value="default">預設 (Noto Sans TC)</option>
+                            <option value="QingFeng">清風手寫體5</option>
+                            <option value="HuiWen">芫荽</option>
+                        </select>
+                        <p class="text-xs text-gray-400 mt-1">※請確認資料夾內有對應的 .ttf 檔案</p>
+                    </div>
+
+                    <!-- 自訂背景 -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">自訂背景 (選填)</label>
+                        <div class="relative">
+                            <input type="file" id="announce-bg-upload" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">上傳圖片將覆蓋預設風格</p>
+                    </div>
+
+                    <!-- 底部資訊設定 -->
+                    <div class="bg-white p-3 rounded-lg border border-gray-200">
+                        <label class="block text-sm font-bold text-gray-700 mb-3">底部資訊 (即時更新)</label>
+                        <div class="space-y-3">
+                            <input type="text" id="announce-line1" class="w-full border p-2 rounded text-sm" placeholder="預約專線" oninput="updateRenderOptions()">
+                            <input type="text" id="announce-line2" class="w-full border p-2 rounded text-sm" placeholder="LINE官方帳號" oninput="updateRenderOptions()">
+                            <input type="text" id="announce-line3" class="w-full border p-2 rounded text-sm" placeholder="FACEBOOK官方專頁" oninput="updateRenderOptions()">
+                            <input type="text" id="announce-line4" class="w-full border p-2 rounded text-sm" placeholder="營業時間" oninput="updateRenderOptions()">
+                            <!-- JS 會自動在這裡插入額外備註欄位 -->
+                        </div>
+                    </div>
+
+                    <!-- 下載按鈕 (統一放在左側設定區底部) -->
+                    <div class="pt-4 border-t border-gray-200">
+                        <button onclick="downloadAnnouncement()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition shadow-lg flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-download"></i> 下載圖片
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側預覽區 (電腦版右側，手機版下方) -->
+            <!-- 修正：移除 justify-center 並使用 my-auto，避免圖片過高時上方被裁切 -->
+            <div class="w-full md:w-2/3 bg-gray-200 flex flex-col items-center p-4 md:p-8 overflow-y-auto flex-1">
+                <div class="shadow-2xl mb-4 md:mb-0 max-w-full my-auto">
+                    <!-- Canvas 加入 max-w-full 確保手機不破版 -->
+                    <canvas id="announce-canvas" class="max-w-full h-auto rounded-lg block mx-auto"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- JS 邏輯 -->
+    <script src="announcement.js"></script>
     <script>
         // 設定區
         const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxZ8Z16SBwAxn0AeycM6VxRLrOyO8Hy9vJ2U4PQkEq8n8GNFZFViYneIT8yQTo5hitX7A/exec';
@@ -457,10 +556,15 @@
             dailyNoteInput = document.getElementById('daily-note');
             isFullCheckbox = document.getElementById('is-full-checkbox');
             recurTimeSelect = document.getElementById('recur-time');
-            // [*** 新增 ***]
             saveAppointmentBtn = document.getElementById('btn-save-appt');
 
             initDatePickers();
+            
+            // 初始化公告生成器
+            if (typeof initAnnouncementGenerator === 'function') {
+                initAnnouncementGenerator();
+            }
+
             try {
                 await fetchStoreData();
             } catch (e) {
@@ -491,7 +595,7 @@
             }
             
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 60000); // [修正] 增加 timeout 到 60000 (60秒)
+            const timeoutId = setTimeout(() => controller.abort(), 60000); 
             options.signal = controller.signal;
 
             try {
@@ -698,14 +802,31 @@
                     tdContent.onclick = (e) => {
                         if (isCurrentDateFull) { Swal.fire('無法新增', '本日美容預約已滿', 'warning'); return; }
                         if (isBlockedSlot) { return; }
+                        // 檢查是否為公休日
+                        const dateStr = formatDate(currentDate);
+                        if (currentDaysOff.includes(dateStr)) {
+                            Swal.fire('無法新增', '本日已設為公休', 'warning');
+                            return;
+                        }
                         if(e.target === tdContent || e.target.classList.contains('appt-group')) openAppointmentModal(null, time);
                     };
                 } else {
                     tdContent.onclick = () => {
                         if (isCurrentDateFull) { Swal.fire('無法新增', '本日美容預約已滿', 'warning'); return; }
+                        // 檢查是否為公休日
+                        const dateStr = formatDate(currentDate);
+                        if (currentDaysOff.includes(dateStr)) {
+                            Swal.fire('無法新增', '本日已設為公休', 'warning');
+                            return;
+                        }
                         openAppointmentModal(null, time);
                     };
-                    if (!isCurrentDateFull) tdContent.innerHTML = `<span class="text-gray-300 text-sm hidden-mobile hover:text-gray-400"><i class="fa-solid fa-plus"></i> 點擊空白處新增</span>`;
+                    
+                    // 只有非公休日才顯示提示文字
+                    const dateStr = formatDate(currentDate);
+                    if (!isCurrentDateFull && !currentDaysOff.includes(dateStr)) {
+                        tdContent.innerHTML = `<span class="text-gray-300 text-sm hidden-mobile hover:text-gray-400"><i class="fa-solid fa-plus"></i> 點擊空白處新增</span>`;
+                    }
                 }
                 tr.appendChild(tdContent); scheduleBody.appendChild(tr);
             });
@@ -837,7 +958,6 @@
 
             if (pets.length === 0) return Swal.fire('提示', '請至少填寫一隻寵物資料', 'warning');
 
-            // [新增] 改變按鈕狀態
             if (saveAppointmentBtn) {
                 saveAppointmentBtn.disabled = true;
                 saveAppointmentBtn.textContent = '儲存中...';
@@ -849,7 +969,6 @@
                 await apiCall('addAppointment', { date, time, phone, isApp, pets }, 'POST');
                 delete scheduleCache[date];
                 
-                // [*** 關鍵修正 ***] 這裡的 Swal.fire 修改了標題
                 const storeName = document.getElementById('current-store-name').innerText;
                 closeAppointmentModal();
                 Swal.fire({ 
@@ -892,26 +1011,47 @@
         async function fetchPetProfiles() {
             try {
                 const profiles = await apiCall('getPetProfiles');
-                allPetProfiles = profiles;
+                allPetProfiles = Array.isArray(profiles) ? profiles : [];
                 renderProfileListSidebar();
-            } catch(e) {}
+            } catch(e) {
+                console.error("fetchPetProfiles Error:", e);
+                document.getElementById('profile-list-container').innerHTML = '<div class="text-center text-red-400 text-sm py-4">讀取失敗</div>';
+            }
         }
         
         function renderProfileListSidebar(filterText = '') {
             const listContainer = document.getElementById('profile-list-container');
+            if(!listContainer) return;
             const searchVal = filterText.toLowerCase();
-            const filtered = allPetProfiles.filter(p => (p.breed && p.breed.toLowerCase().includes(searchVal)) || (p.name && p.name.toLowerCase().includes(searchVal)));
+            
+            const filtered = allPetProfiles.filter(p => {
+                const b = (p.breed || '').toString().toLowerCase();
+                const n = (p.name || '').toString().toLowerCase();
+                const ph = (p.phone || '').toString();
+                return b.includes(searchVal) || n.includes(searchVal) || ph.includes(searchVal);
+            });
+
             if(filtered.length === 0) { listContainer.innerHTML = '<div class="text-center text-gray-400 text-sm py-4">無相符資料</div>'; return; }
-            listContainer.innerHTML = filtered.map(p => `
+            
+            listContainer.innerHTML = filtered.map(p => {
+                const phoneDisplay = p.phone ? `<span class="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100">${p.phone}</span>` : '';
+                return `
                 <div class="p-2 bg-white border border-gray-100 rounded-md hover:shadow-sm transition group relative">
                     <div class="flex justify-between items-start">
-                        <div><div class="text-sm font-bold text-gray-800">${p.breed} - ${p.name}</div><div class="text-xs text-gray-500 mt-1 leading-relaxed">${p.notes}</div></div>
-                        <div class="opacity-0 group-hover:opacity-100 transition flex gap-1 bg-white pl-2">
+                        <div>
+                            <div class="flex items-center gap-1 flex-wrap">
+                                ${phoneDisplay}
+                                <span class="text-sm font-bold text-gray-800">${p.breed || '未填'} - ${p.name || '未填'}</span>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1 leading-relaxed">${p.notes || ''}</div>
+                        </div>
+                        <div class="opacity-0 group-hover:opacity-100 transition flex gap-1 bg-white pl-2 absolute right-2 top-2">
                              <button onclick="editProfile('${p.id}')" class="text-blue-500 hover:text-blue-700 p-1" title="編輯"><i class="fa-solid fa-pen"></i></button>
                              <button onclick="deleteProfile('${p.id}')" class="text-red-500 hover:text-red-700 p-1" title="刪除"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
-                </div>`).join('');
+                </div>`;
+            }).join('');
         }
         
         function filterProfileList() { const text = document.getElementById('profile-search').value; renderProfileListSidebar(text); }
@@ -921,6 +1061,7 @@
             if(!p) return;
             document.getElementById('profile-modal-title').innerText = "編輯注意事項";
             document.getElementById('profile-id').value = p.id;
+            document.getElementById('profile-phone').value = p.phone || '';
             document.getElementById('profile-breed').value = p.breed;
             document.getElementById('profile-name').value = p.name;
             document.getElementById('profile-notes').value = p.notes;
@@ -940,14 +1081,53 @@
              const res = await Swal.fire({ title: '確定刪除?', icon: 'warning', showCancelButton: true, confirmButtonText: '刪除', cancelButtonText: '取消', confirmButtonColor: '#d33' });
              if(res.isConfirmed) { toggleLoader(true, '刪除中...'); try { await apiCall('deletePetProfile', {id}, 'POST'); await fetchPetProfiles(); Swal.fire('已刪除', '', 'success'); } catch(e) { Swal.fire('錯誤', '刪除失敗', 'error'); } finally { toggleLoader(false); } }
         }
+        
+        function triggerAllPetChecks() {
+            document.querySelectorAll('.pet-breed').forEach(el => checkPetNotes(el));
+        }
+
         function checkPetNotes(inputElement) {
             const container = inputElement.closest('.pet-entry');
             const breed = container.querySelector('.pet-breed').value.trim().toLowerCase();
             const name = container.querySelector('.pet-name').value.trim().toLowerCase();
             const noteDisplay = container.querySelector('.pet-auto-note');
             const noteInput = container.querySelector('.pet-notes');
-            if (!breed && !name) { noteDisplay.classList.add('hidden'); return; }
-            const found = allPetProfiles.find(p => (p.breed || '').toLowerCase() === breed && (p.name || '').toLowerCase() === name);
+            
+            // 取得預約表單上的電話
+            const apptPhoneInput = document.getElementById('appt-phone');
+            const apptPhone = apptPhoneInput ? apptPhoneInput.value.replace(/[^0-9]/g, '') : '';
+
+            // [修改重點] 
+            // 規則 1：如果沒輸入電話，且沒輸入寵物資料，則不進行比對
+            if (!apptPhone && (!breed || !name)) { 
+                noteDisplay.classList.add('hidden'); 
+                return; 
+            }
+            // 規則 2：如果有輸入電話，即使沒寵物資料，也進行比對（因為要根據電話抓取）
+            
+            const found = allPetProfiles.find(p => {
+                const pPhone = (p.phone || '').toString().replace(/[^0-9]/g, '');
+                
+                // [優先] 檢查電話：如果有輸入電話，且與資料庫電話相符 -> 直接當作符合 (忽略品種/名字)
+                if (apptPhone && pPhone) {
+                    if (apptPhone === pPhone) return true;
+                }
+                
+                // [備案] 檢查品種與名字：
+                // 條件：(有輸入品種名) 且 (完全符合)
+                const pBreed = (p.breed || '').toString().toLowerCase();
+                const pName = (p.name || '').toString().toLowerCase();
+                
+                if (breed && name && pBreed === breed && pName === name) {
+                    // 如果沒輸入電話 -> 允許符合 (舊規則)
+                    if (!apptPhone) return true;
+                    // 如果有輸入電話，但此筆資料沒有電話 (舊資料) -> 允許符合
+                    if (!pPhone) return true;
+                }
+                
+                return false;
+            });
+
             if (found) {
                 noteDisplay.innerHTML = `<strong><i class="fa-solid fa-circle-exclamation"></i> 注意：</strong> ${found.notes}`;
                 noteDisplay.classList.remove('hidden');
@@ -984,7 +1164,6 @@
             if (currentNote.startsWith('[FULL]')) currentNote = currentNote.substring(6); 
             const newNote = isChecked ? `[FULL]${currentNote}` : currentNote;
             isCurrentDateFull = isChecked; dailyNoteInput.value = currentNote; 
-            // [新增] 立即更新快取，確保切換回來時狀態正確
             fullDatesCache[dateStr] = isChecked;
             
             saveDailyNote(newNote); renderTable(); renderBusinessDayButtons();
@@ -1004,65 +1183,45 @@
             } catch (e) { console.error(e); }
         }
         
-        // [*** 新增 ***] 顯示固定預約 Modal
         function openRecurringModal() {
             const modal = document.getElementById('recurring-modal');
             if (!modal) return;
-            
-            // 重置表單
             document.getElementById('recurring-form').reset();
-            
-            // 填入時間選項 (複製 main form 的 options)
             const mainTimeSelect = document.getElementById('time-select');
             if (mainTimeSelect && recurTimeSelect) {
                 recurTimeSelect.innerHTML = mainTimeSelect.innerHTML;
             }
-            
             modal.classList.remove('hidden');
         }
         
-        // [*** 新增 ***] 處理固定預約提交 (批次新增)
         async function handleSaveRecurringAppointment() {
-            // 1. 收集表單資料
             const startDate = document.getElementById('recur-start-date').value;
             const endDate = document.getElementById('recur-end-date').value;
             const time = document.getElementById('recur-time').value;
             const phone = document.getElementById('recur-phone').value;
             const isApp = document.getElementById('recur-is-app').checked;
             
-            // 收集星期幾 Checkbox
             const checkboxes = document.querySelectorAll('input[name="recur-day"]:checked');
-            const selectedDays = Array.from(checkboxes).map(cb => parseInt(cb.value)); // [1, 3, 5] etc.
+            const selectedDays = Array.from(checkboxes).map(cb => parseInt(cb.value)); 
 
-            // 收集寵物資料 (單隻)
             const species = document.getElementById('recur-species').value;
             const service = document.getElementById('recur-service').value;
             const breed = document.getElementById('recur-breed').value;
             const petName = document.getElementById('recur-pet-name').value;
             const notes = document.getElementById('recur-notes').value;
 
-            // 2. 驗證
             if (!startDate || !endDate) { return Swal.fire('提示', '請選擇開始與結束日期', 'warning'); }
             if (selectedDays.length === 0) { return Swal.fire('提示', '請至少勾選一天', 'warning'); }
             if (!time) { return Swal.fire('提示', '請選擇時間', 'warning'); }
             if (!petName && !service) { return Swal.fire('提示', '請填寫寵物資料', 'warning'); }
 
-            // 3. 計算日期列表 (自動避開公休)
             const targetDates = [];
             let curr = new Date(startDate);
             const end = new Date(endDate);
             
-            // [*** 新增 ***] 避開公休日邏輯
-            // 注意：currentDaysOff 只包含已載入的公休日，可能不完整 (如果跨月)。
-            // 若要嚴謹，應重新 fetch 所有相關月份的公休，或假設 currentDaysOff 足夠涵蓋。
-            // 在此簡單實作：比對 currentDaysOff
-            
             while (curr <= end) {
                 const dateStr = formatSheetDate(curr);
-                
-                // 檢查星期幾
                 if (selectedDays.includes(curr.getDay())) {
-                    // [新增] 檢查是否為公休日 (currentDaysOff 陣列)
                     if (!currentDaysOff.includes(dateStr)) {
                         targetDates.push(dateStr);
                     }
@@ -1072,15 +1231,12 @@
             
             if (targetDates.length === 0) { return Swal.fire('提示', '區間內沒有符合的日期 (可能遇到公休日或無符合星期)', 'info'); }
             
-            // 4. 執行批次新增
-            // 關閉 Modal
             document.getElementById('recurring-modal').classList.add('hidden');
             toggleLoader(true, `準備建立 ${targetDates.length} 筆預約...`);
 
             let successCount = 0;
             let failCount = 0;
 
-            // 循序執行 (避免同時發送太多請求)
             for (let i = 0; i < targetDates.length; i++) {
                 const dateStr = targetDates[i];
                 toggleLoader(true, `正在建立第 ${i + 1} / ${targetDates.length} 筆... (${dateStr})`);
@@ -1100,10 +1256,7 @@
                 };
 
                 try {
-                    // [*** 修正 ***] apiCall 參數順序修正 (action, payload, method)
                     await apiCall('addAppointment', payload, 'POST');
-                    
-                    // 清除該日期的快取
                     delete scheduleCache[dateStr];
                     successCount++;
                 } catch (e) {
@@ -1114,14 +1267,12 @@
 
             toggleLoader(false);
             
-            // 5. 結果提示
             if (failCount === 0) {
                 Swal.fire('建立完成', `成功建立 ${successCount} 筆固定預約！`, 'success');
             } else {
                 Swal.fire('建立完成', `成功: ${successCount} 筆，失敗: ${failCount} 筆`, 'warning');
             }
 
-            // 重新載入當前畫面
             loadSchedule();
         }
 
@@ -1129,27 +1280,19 @@
         function generateTimeSlotsOption() { 
             const select = document.getElementById('appt-time'); 
             select.innerHTML = ''; 
-            
-            // 產生選項
             const options = [];
             generateTimeSlots().forEach(time => { 
                 options.push(`<option value="${time}">${time}</option>`);
             });
             select.innerHTML = options.join('');
-            
-            // [*** 新增 ***] 同步更新到固定預約的時間選單
-            if(recurTimeSelect) {
-                recurTimeSelect.innerHTML = select.innerHTML;
-            }
+            if(recurTimeSelect) { recurTimeSelect.innerHTML = select.innerHTML; }
         }
         function formatDate(date) { const year = date.getFullYear(); const month = String(date.getMonth() + 1).padStart(2, '0'); const day = String(date.getDate()).padStart(2, '0'); return `${year}-${month}-${day}`; }
         function formatTime(timeVal) { if (timeVal instanceof Date) return `${String(timeVal.getHours()).padStart(2,'0')}:${String(timeVal.getMinutes()).padStart(2,'0')}`; if (typeof timeVal === 'string' && timeVal.includes('T')) { const d = new Date(timeVal); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; } if (typeof timeVal === 'string' && timeVal.length > 5) return timeVal.substring(0, 5); return timeVal; }
         function getServiceColorClass(serviceName) { if (serviceName === '美容') return 'bg-beauty'; if (serviceName === '洗澡') return 'bg-bath'; if (serviceName === '單項') return 'bg-single'; return 'bg-gray-100 border-gray-200'; }
         function toggleSidebar() { const sidebar = document.getElementById('sidebar'); const overlay = document.getElementById('sidebar-overlay'); if (sidebar.classList.contains('translate-x-full')) { sidebar.classList.remove('translate-x-full'); overlay.classList.remove('hidden'); } else { sidebar.classList.add('translate-x-full'); overlay.classList.add('hidden'); } }
         
-        // 補充缺少的函式
         function initDatePickers() {
-            // [左上角] 快速跳轉日曆 (單選)
             flatpickr("#nav-date-picker", {
                 locale: "zh_tw",
                 dateFormat: "Y-m-d",
@@ -1164,7 +1307,6 @@
                 }
             });
 
-            // [側邊欄] 公休設定日曆 (多選)
             flatpickr("#sidebar-dayoff-picker", {
                 locale: "zh_tw",
                 mode: "multiple",
@@ -1176,7 +1318,6 @@
                 }
             });
 
-            // [*** 新增 ***] 固定預約日期選單
             flatpickr("#recur-start-date", { locale: "zh_tw", dateFormat: "Y-m-d" });
             flatpickr("#recur-end-date", { locale: "zh_tw", dateFormat: "Y-m-d" });
         }
@@ -1186,17 +1327,10 @@
             try {
                 const data = await apiCall('getDaysOff');
                 currentDaysOff = data.map(d => formatDate(new Date(d))).filter(d => d);
-                
-                // 更新側邊欄公休設定的選取狀態
                 const fp = document.getElementById('sidebar-dayoff-picker')._flatpickr;
-                if(fp) {
-                    fp.setDate(currentDaysOff, false); 
-                }
-
-                // 更新快速跳轉選單 (禁用公休日期)
+                if(fp) { fp.setDate(currentDaysOff, false); }
                 const fpNav = document.getElementById('nav-date-picker')._flatpickr;
                 if(fpNav) fpNav.set('disable', currentDaysOff);
-                
                 renderBusinessDayButtons();
             } catch (e) {}
         }
@@ -1212,11 +1346,8 @@
                 await fetchDaysOff();
                 const toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1000 });
                 toast.fire({ icon: 'success', title: '公休已更新' });
-                
                 const dateStr = formatDate(currentDate);
-                if (currentDaysOff.includes(dateStr) || !currentDaysOff.includes(dateStr)) {
-                     loadSchedule();
-                }
+                if (currentDaysOff.includes(dateStr) || !currentDaysOff.includes(dateStr)) { loadSchedule(); }
             } catch(e) { console.error(e); }
         }
         
@@ -1229,28 +1360,18 @@
 
             const todayBtn = document.createElement('button');
             const isTodayActive = todayStr === viewingStr;
-            
-            let isTodayFull = false;
-            if (isTodayActive) {
-                isTodayFull = isCurrentDateFull;
-            } else {
-                isTodayFull = fullDatesCache[todayStr] === true;
-            }
-            
+            let isTodayFull = isTodayActive ? isCurrentDateFull : (fullDatesCache[todayStr] === true);
             let btnClass = 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
+            
             if (isTodayActive) {
-                if (isTodayFull) {
-                    btnClass = 'btn-full-active shadow-md'; 
-                } else {
-                    btnClass = 'bg-blue-600 text-white border-blue-600 shadow-md'; 
-                }
+                if (isTodayFull) { btnClass = 'btn-full-active shadow-md'; } else { btnClass = 'bg-blue-600 text-white border-blue-600 shadow-md'; }
             } else if (isTodayFull) { 
                  btnClass = 'bg-red-100 text-red-600 border-red-200 hover:bg-red-200'; 
             }
 
             todayBtn.className = `flex-shrink-0 px-4 py-2 rounded-md text-sm font-bold border transition shadow-sm ${btnClass}`;
             todayBtn.textContent = '今天';
-            todayBtn.onclick = () => { currentDate = new Date(); updateNavDatePicker(); loadSchedule(); };
+            todayBtn.onclick = () => { currentDate = new Date(dateObj); updateNavDatePicker(); loadSchedule(); };
             container.appendChild(todayBtn);
             
             const year = currentViewMonthDate.getFullYear();
@@ -1265,31 +1386,17 @@
                 
                 const btn = document.createElement('button');
                 const isActive = dateStr === viewingStr;
-                
                 const isFull = (isActive && isCurrentDateFull) || (fullDatesCache[dateStr] === true);
-
                 const btnText = dateObj.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' });
-                
                 let activeClass = 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600';
                 
                 if (isActive) {
-                    if (isFull) {
-                        activeClass = 'btn-full-active shadow-md'; 
-                    } else {
-                        activeClass = 'bg-blue-600 text-white border-blue-600 shadow-md'; 
-                    }
-                } else if (isFull) { 
-                    activeClass = 'bg-red-100 text-red-600 border-red-200 hover:bg-red-200'; 
-                }
+                    if (isFull) { activeClass = 'btn-full-active shadow-md'; } else { activeClass = 'bg-blue-600 text-white border-blue-600 shadow-md'; }
+                } else if (isFull) { activeClass = 'bg-red-100 text-red-600 border-red-200 hover:bg-red-200'; }
 
                 btn.className = `flex-shrink-0 px-3 py-2 flex items-center justify-center rounded-md text-sm font-medium border transition shadow-sm ${activeClass}`;
                 btn.textContent = btnText;
-                
-                btn.onclick = () => {
-                    currentDate = new Date(dateObj);
-                    updateNavDatePicker(); 
-                    loadSchedule();
-                };
+                btn.onclick = () => { currentDate = new Date(dateObj); updateNavDatePicker(); loadSchedule(); };
                 container.appendChild(btn);
             }
         }
@@ -1306,18 +1413,14 @@
         
         function formatSheetDate(dateObject) {
             if (!dateObject) return null;
-            if (typeof dateObject === 'string' && dateObject.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                return dateObject;
-            }
+            if (typeof dateObject === 'string' && dateObject.match(/^\d{4}-\d{2}-\d{2}$/)) { return dateObject; }
             try {
                 const date = new Date(dateObject);
                 const year = date.getFullYear();
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 const day = String(date.getDate()).padStart(2, '0');
                 return `${year}-${month}-${day}`;
-            } catch (e) {
-                return null; 
-            }
+            } catch (e) { return null; }
         }
     </script>
 </body>
