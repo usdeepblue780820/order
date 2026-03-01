@@ -1370,7 +1370,7 @@
 
             todayBtn.className = `flex-shrink-0 px-4 py-2 rounded-md text-sm font-bold border transition shadow-sm ${btnClass}`;
             todayBtn.textContent = '今天';
-            todayBtn.onclick = () => { currentDate = new Date(dateObj); updateNavDatePicker(); loadSchedule(); };
+            todayBtn.onclick = () => { currentDate = new Date(); updateNavDatePicker(); loadSchedule(); };
             container.appendChild(todayBtn);
             
             const year = currentViewMonthDate.getFullYear();
@@ -1424,4 +1424,3 @@
     </script>
 </body>
 </html>
-
