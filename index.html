@@ -678,6 +678,18 @@
         function getServiceColorClass(s) { return s==='美容'?'bg-beauty':s==='洗澡'?'bg-bath':s==='單項'?'bg-single':'bg-gray-100'; }
         function generateTimeSlots() { const s=[]; let [h,m]=storeConfig.start.split(':').map(Number); while(h<parseInt(storeConfig.end.split(':')[0])){ s.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`); m+=storeConfig.unit; if(m>=60){h++; m=0;} } return s; }
         
+        function generateTimeSlotsOption() {
+            const select = document.getElementById('appt-time');
+            if (!select) return;
+            select.innerHTML = '';
+            generateTimeSlots().forEach(time => {
+                const opt = document.createElement('option');
+                opt.value = time;
+                opt.textContent = time;
+                select.appendChild(opt);
+            });
+        }
+
         function openAppointmentModal(app, time) {
             document.getElementById('appointment-modal').classList.remove('hidden');
             document.getElementById('appt-date').value = formatDate(currentDate);
@@ -705,6 +717,7 @@
         }
         
         function closeAppointmentModal() { document.getElementById('appointment-modal').classList.add('hidden'); }
+        
         function addPetField(d) {
             const div = document.createElement('div');
             div.className = 'pet-entry p-2 border rounded bg-gray-50';
@@ -712,6 +725,26 @@
             if(d) { div.querySelector('.pet-service').value=d.service; div.querySelector('.pet-breed').value=d.breed; div.querySelector('.pet-name').value=d.name; div.querySelector('.pet-notes').value=d.note; }
             document.getElementById('pets-container').appendChild(div);
         }
+        
+        function triggerAllPetChecks() {}
+
+        async function deleteCurrentAppointment() {
+            const ids = document.getElementById('delete-row-ids').value;
+            const date = document.getElementById('appt-date').value;
+            if (!ids) return;
+            const result = await Swal.fire({ title: '確定刪除?', text: "刪除後無法復原", icon: 'warning', showCancelButton: true, confirmButtonText: '刪除', cancelButtonText: '取消' });
+            if (result.isConfirmed) {
+                toggleLoader(true, '刪除中...');
+                try {
+                    await apiCall('deleteAppointments', { rowIDs: JSON.parse(ids) }, 'POST');
+                    delete scheduleCache[date];
+                    closeAppointmentModal();
+                    await loadSchedule(false);
+                    Swal.fire('已刪除', '', 'success');
+                } catch(e) { Swal.fire('錯誤', '刪除失敗：' + e.message, 'error'); } finally { toggleLoader(false); }
+            }
+        }
+
         function initDatePickers() { flatpickr("#nav-date-picker", { locale:"zh_tw", defaultDate:"today", onChange: d => { currentDate=d[0]; loadSchedule(); }}); }
         function processDailyNote(n) { isFullCheckbox.checked = n.includes('[FULL]'); dailyNoteInput.value = n.replace('[FULL]',''); isCurrentDateFull = isFullCheckbox.checked; }
         function checkDayOffAndRender(d) { document.getElementById('day-off-banner').classList.toggle('hidden', !currentDaysOff.includes(d)); renderTable(); }
