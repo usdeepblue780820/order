@@ -14,6 +14,9 @@
     <script src="https://npmcdn.com/flatpickr/dist/l10n/zh-tw.js"></script>
     <!-- SweetAlert2 (更漂亮的提示框) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 
     <style>
         body {
@@ -526,6 +529,36 @@
         // 設定區
         const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxZ8Z16SBwAxn0AeycM6VxRLrOyO8Hy9vJ2U4PQkEq8n8GNFZFViYneIT8yQTo5hitX7A/exec';
         
+        // 貼上你的完整 firebaseConfig
+        const firebaseConfig = { 
+            apiKey: "AIzaSyA8MndGnDmiqx00EbUOZeP9MYAESUCu8Qc",
+            authDomain: "order-bd9bd.firebaseapp.com",
+            databaseURL: "https://order-bd9bd-default-rtdb.firebaseio.com",
+            projectId: "order-bd9bd",
+            storageBucket: "order-bd9bd.firebasestorage.app",
+            messagingSenderId: "930551323886",
+            appId: "1:930551323886:web:8a77f96767fa593dae67ff",
+            measurementId: "G-2N4SHSD5PW"
+        };
+
+        let db = null;
+        let firebaseListener = null;
+
+        // 安全判斷：只有在填寫了正確的 Firebase 設定時才進行初始化
+        if (firebaseConfig && firebaseConfig.projectId && firebaseConfig.apiKey) {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.database();
+            } catch (e) {
+                console.error("Firebase 初始化失敗:", e);
+            }
+        } else {
+            console.warn("尚未設定 Firebase 參數，即時同步功能暫未啟用。");
+        }
+
+        const clientId = Math.random().toString(36).substring(2, 15);
+        window.lastSyncTime = Date.now();
+        
         // 宣告全域變數 (避免 ReferenceError)
         let allStores = [];
         let currentStoreId = null;
@@ -614,6 +647,42 @@
             }
         }
 
+        function notifyStoreUpdate() {
+            if (!currentStoreId || !db) return;
+            db.ref('storeUpdates/' + currentStoreId).set({
+                time: Date.now(),
+                by: clientId
+            });
+        }
+
+        function listenToStoreUpdates() {
+            if (!currentStoreId || !db) return;
+            if (firebaseListener) {
+                db.ref('storeUpdates/' + currentStoreId).off('value', firebaseListener);
+            }
+            firebaseListener = db.ref('storeUpdates/' + currentStoreId).on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.by && data.by !== clientId) {
+                    if (data.time > window.lastSyncTime) {
+                        window.lastSyncTime = data.time;
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'info',
+                            title: '有同事更新預約/公休，頁面已自動刷新',
+                            showConfirmButton: false,
+                            timer: 3000
+                        });
+                        scheduleCache = {};
+                        fullDatesCache = {};
+                        loadSchedule(false);
+                        fetchDaysOff();
+                        fetchPetProfiles();
+                    }
+                }
+            });
+        }
+
         async function fetchStoreData() {
             toggleLoader(true, '讀取分店資料...');
             try {
@@ -659,6 +728,7 @@
             scheduleCache = {}; 
             fullDatesCache = {};
             generateTimeSlotsOption();
+            listenToStoreUpdates();
             
             toggleLoader(true, '載入店鋪資料...');
             try {
@@ -982,6 +1052,7 @@
                 });
                 
                 await loadSchedule(false);
+                notifyStoreUpdate();
             } catch (e) {
                 Swal.fire('錯誤', '儲存失敗：' + e.message, 'error');
             } finally {
@@ -1006,6 +1077,7 @@
                     closeAppointmentModal();
                     await loadSchedule(false);
                     Swal.fire('已刪除', '', 'success');
+                    notifyStoreUpdate();
                 } catch(e) { Swal.fire('錯誤', '刪除失敗：' + e.message, 'error'); } finally { toggleLoader(false); }
             }
         }
@@ -1077,11 +1149,11 @@
             if(!data.breed && !data.name) return Swal.fire('提示', '請至少輸入品種或寵物名', 'warning');
             document.getElementById('profile-modal').classList.add('hidden');
             toggleLoader(true, '儲存注意事項...');
-            try { await apiCall(action, data, 'POST'); await fetchPetProfiles(); Swal.fire({ icon: 'success', title: '儲存成功', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 }); } catch(e) { Swal.fire('錯誤', '儲存失敗', 'error'); } finally { toggleLoader(false); }
+            try { await apiCall(action, data, 'POST'); await fetchPetProfiles(); Swal.fire({ icon: 'success', title: '儲存成功', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 }); notifyStoreUpdate(); } catch(e) { Swal.fire('錯誤', '儲存失敗', 'error'); } finally { toggleLoader(false); }
         }
         async function deleteProfile(id) {
              const res = await Swal.fire({ title: '確定刪除?', icon: 'warning', showCancelButton: true, confirmButtonText: '刪除', cancelButtonText: '取消', confirmButtonColor: '#d33' });
-             if(res.isConfirmed) { toggleLoader(true, '刪除中...'); try { await apiCall('deletePetProfile', {id}, 'POST'); await fetchPetProfiles(); Swal.fire('已刪除', '', 'success'); } catch(e) { Swal.fire('錯誤', '刪除失敗', 'error'); } finally { toggleLoader(false); } }
+             if(res.isConfirmed) { toggleLoader(true, '刪除中...'); try { await apiCall('deletePetProfile', {id}, 'POST'); await fetchPetProfiles(); Swal.fire('已刪除', '', 'success'); notifyStoreUpdate(); } catch(e) { Swal.fire('錯誤', '刪除失敗', 'error'); } finally { toggleLoader(false); } }
         }
         
         function triggerAllPetChecks() {
@@ -1182,6 +1254,7 @@
                 await apiCall('saveDailyNote', { date: dateStr, notes: notesToSend }, 'POST');
                 const toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
                 toast.fire({ icon: 'success', title: '狀態已儲存' });
+                notifyStoreUpdate();
             } catch (e) { console.error(e); }
         }
         
@@ -1275,6 +1348,7 @@
                 Swal.fire('建立完成', `成功: ${successCount} 筆，失敗: ${failCount} 筆`, 'warning');
             }
 
+            notifyStoreUpdate();
             loadSchedule();
         }
 
@@ -1354,6 +1428,7 @@
                 await fetchDaysOff();
                 const toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1000 });
                 toast.fire({ icon: 'success', title: '當月公休已更新' });
+                notifyStoreUpdate();
                 loadSchedule();
             } catch(e) { 
                 console.error(e); 
@@ -1437,3 +1512,4 @@
     </script>
 </body>
 </html>
+
