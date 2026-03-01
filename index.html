@@ -356,10 +356,13 @@
                     <label class="block text-sm font-bold text-gray-700 mb-1">
                         <i class="fa-regular fa-calendar-xmark mr-1"></i>公休設定
                     </label>
-                    <div class="flex items-center bg-gray-50 border border-gray-300 rounded-md shadow-sm hover:border-blue-400 transition cursor-pointer">
+                    <div class="flex items-center bg-gray-50 border border-gray-300 rounded-md shadow-sm hover:border-blue-400 transition cursor-pointer mb-2">
                          <input type="text" id="sidebar-dayoff-picker" class="w-full text-center font-medium text-gray-700 bg-transparent border-none focus:ring-0 cursor-pointer py-2 text-sm" readonly placeholder="點擊設定公休">
                     </div>
-                    <div class="text-xs text-gray-400 mt-1 text-center">點選日期以切換公休狀態</div>
+                    <button onclick="saveDaysOff()" class="w-full text-sm bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-md hover:bg-red-100 transition shadow-sm flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-save mr-1"></i>儲存當月公休
+                    </button>
+                    <div class="text-xs text-gray-400 mt-2 text-center">複選日期後，點擊儲存按鈕一次生效</div>
                 </div>
             </div>
         </div>
@@ -1311,10 +1314,8 @@
                 mode: "multiple",
                 dateFormat: "Y-m-d",
                 conjunction: " :: ",
-                defaultDate: [],
-                onChange: function(selectedDates, dateStr, instance) {
-                    handleDaysOffChange(selectedDates, instance);
-                }
+                defaultDate: []
+                // 取消原本的 onChange 自動儲存設定
             });
 
             flatpickr("#recur-start-date", { locale: "zh_tw", dateFormat: "Y-m-d" });
@@ -1334,20 +1335,32 @@
             } catch (e) {}
         }
         
-        async function handleDaysOffChange(selectedDates, instance) {
-            const viewYear = instance.currentYear;
-            const viewMonth = instance.currentMonth + 1;
+        // 新增的儲存公休方法
+        async function saveDaysOff() {
+            const fp = document.getElementById('sidebar-dayoff-picker')._flatpickr;
+            if (!fp) return;
+
+            // 取得當前日曆面板顯示的月份
+            const viewYear = fp.currentYear;
+            const viewMonth = fp.currentMonth + 1;
             const monthStr = `${viewYear}-${String(viewMonth).padStart(2, '0')}`;
-            const datesInMonth = selectedDates.map(d => formatDate(d)).filter(d => d.startsWith(monthStr));
-                
+
+            // 篩選出該月份被選中的日期
+            const datesInMonth = fp.selectedDates.map(d => formatDate(d)).filter(d => d.startsWith(monthStr));
+
+            toggleLoader(true, '儲存公休中...');
             try {
                 await apiCall('setDaysOff', { dates: datesInMonth, month: monthStr }, 'POST');
                 await fetchDaysOff();
                 const toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1000 });
-                toast.fire({ icon: 'success', title: '公休已更新' });
-                const dateStr = formatDate(currentDate);
-                if (currentDaysOff.includes(dateStr) || !currentDaysOff.includes(dateStr)) { loadSchedule(); }
-            } catch(e) { console.error(e); }
+                toast.fire({ icon: 'success', title: '當月公休已更新' });
+                loadSchedule();
+            } catch(e) { 
+                console.error(e); 
+                Swal.fire('錯誤', '公休儲存失敗', 'error');
+            } finally {
+                toggleLoader(false);
+            }
         }
         
         function renderBusinessDayButtons() {
