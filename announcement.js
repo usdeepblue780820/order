@@ -94,7 +94,7 @@ function buildDayStatusEditor() {
             if (hd === 'am' && dayStatusOverrides[d] === undefined) {
                 dayStatusOverrides[d] = { status: 'early' }; // 上半天 → 13:00前
             } else if (hd === 'pm' && dayStatusOverrides[d] === undefined) {
-                dayStatusOverrides[d] = { status: 'late', time: '13:00後' }; // 下半天 → 13:00後
+                dayStatusOverrides[d] = { status: 'late', time: '16:00後' }; // 下半天 → 16:00後
             }
         }
     }
@@ -130,8 +130,8 @@ function getDayStatusStr(day) {
 // 取得某日的晚到時間
 function getDayLateTime(day) {
     const entry = dayStatusOverrides[day];
-    if (!entry || typeof entry === 'string') return '13:00';
-    return entry.time || '13:00';
+    if (!entry || typeof entry === 'string') return '16:00';
+    return entry.time || '16:00';
 }
 
 // 建立日期按鈕
@@ -177,8 +177,8 @@ async function toggleDayStatus(day) {
         const result = await Swal.fire({
             title: `第 ${day} 日 — 顯示文字`,
             input: 'text',
-            inputValue: '13:00後',
-            inputPlaceholder: '例如：13:00後',
+            inputValue: '16:00後',
+            inputPlaceholder: '例如：16:00後',
             showCancelButton: true,
             confirmButtonText: '確認',
             cancelButtonText: '取消',
