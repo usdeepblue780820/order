@@ -92,7 +92,7 @@ function buildDayStatusEditor() {
             const dStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             const hd = halfDayCache[dStr];
             if (hd === 'am' && dayStatusOverrides[d] === undefined) {
-                dayStatusOverrides[d] = { status: 'early' }; // 上半天 → 16:00前
+                dayStatusOverrides[d] = { status: 'early' }; // 上半天 → 13:00前
             } else if (hd === 'pm' && dayStatusOverrides[d] === undefined) {
                 dayStatusOverrides[d] = { status: 'late', time: '16:00後' }; // 下半天 → 16:00後
             }
@@ -156,7 +156,7 @@ function renderDayBtn(btn, day, status) {
         btn.innerHTML = `<span class="text-xs">${day}</span><span style="font-size:9px;line-height:1.1">${t}</span>`;
     } else if (status === 'early') {
         btn.className = base + 'bg-amber-100 text-amber-700 border-amber-300';
-        btn.innerHTML = `<span class="text-xs">${day}</span><span style="font-size:9px;line-height:1.1">16:00前</span>`;
+        btn.innerHTML = `<span class="text-xs">${day}</span><span style="font-size:9px;line-height:1.1">13:00前</span>`;
     } else {
         btn.className = base + 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-blue-50 hover:border-blue-300';
         btn.innerHTML = `<span class="text-xs">${day}</span>`;
@@ -229,7 +229,7 @@ async function toggleDayStatus(day) {
         // 上半天(16:00前) → 可清除
         const action = await Swal.fire({
             title: `第 ${day} 日`,
-            html: `目前：<b>16:00 前可接</b>`,
+            html: `目前：<b>13:00 前可接</b>`,
             showDenyButton: false,
             showCancelButton: true,
             confirmButtonText: '<i class="fa-solid fa-trash"></i> 清除',
@@ -609,7 +609,7 @@ function drawAnnouncement() {
                     ctx.font = `bold 34px ${useFont}`;
                     ctx.fillStyle = '#b45309';
                     ctx.textAlign = 'center';
-                    ctx.fillText('16:00前', currentX + (cellWidth / 2), currentY + (cellHeight / 2) + 14);
+                    ctx.fillText('13:00前', currentX + (cellWidth / 2), currentY + (cellHeight / 2) + 14);
                 }
 
                 currentDay++;
