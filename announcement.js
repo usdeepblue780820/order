@@ -370,6 +370,19 @@ function openAnnouncementModal() {
 
         // 重設每日狀態（每次開啟依當月公休重新初始化）
         dayStatusOverrides = {};
+
+        // 從 scheduleCache 補齊 halfDayCache（修復重整後半天設定遺失問題）
+        if (typeof scheduleCache !== 'undefined' && typeof halfDayCache !== 'undefined') {
+            for (const dateStr in scheduleCache) {
+                const note = scheduleCache[dateStr]?.note || '';
+                if (note.startsWith('[AM]')) {
+                    halfDayCache[dateStr] = 'am';
+                } else if (note.startsWith('[PM]')) {
+                    halfDayCache[dateStr] = 'pm';
+                }
+            }
+        }
+
         buildDayStatusEditor();
         
         // --- 自動填入分店資料 (智慧搜尋版) ---
